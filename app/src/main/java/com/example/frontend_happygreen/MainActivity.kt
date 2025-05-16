@@ -113,10 +113,12 @@ fun HeaderBar(navController: NavHostController, title:String) {
                 fontSize = 20.sp
             )
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
+            .background(Color(99, 169, 177)),
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
             titleContentColor = MaterialTheme.colorScheme.onPrimary
+
         )
     )
 }
@@ -127,7 +129,8 @@ fun BottomNavBar(navController: NavHostController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(56.dp)
+            .background(Color(99, 169, 177)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -144,27 +147,35 @@ fun BottomNavBar(navController: NavHostController) {
         }
     }
 }
+
 //Singoli Bottooni In Basso
 @Composable
 fun NavBarButton(destination: String, iconResId: Int, label: String, navController: NavHostController) {
     Button(
         onClick = { navController.navigate(destination) },
-        shape = RoundedCornerShape(5.dp)
+        shape = RoundedCornerShape(5.dp),
+        modifier = Modifier.padding(1.dp)
+            .background(Color(99, 169, 177)),
+
     ) {
         Image(
             painter = painterResource(iconResId),
             contentDescription = label,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier
+                .size(24.dp) // Adjust size of the icon
+                .padding(2.dp) // Optional: Add padding inside the button around the image
         )
     }
 }
+
 
 @Composable
 fun CenteredContent(paddingValues: PaddingValues, text: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues),
+            .padding(paddingValues)
+            .background(Color(79, 149, 157)),
         contentAlignment = Alignment.Center
     ) {
         Text(text)
@@ -174,13 +185,26 @@ fun CenteredContent(paddingValues: PaddingValues, text: String) {
 @Composable
 fun HomePage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController,"HappyGreen") },
+        topBar = { HeaderBar(navController, "HappyGreen") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        CenteredContent(paddingValues, "Ciane")
+        // Main content inside the Scaffold, using Column to organize UI elements vertically
+        Column(
+            modifier = Modifier
+                .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .fillMaxSize(), // Make sure the column takes up the available space
+            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
+            verticalArrangement = Arrangement.Center // Center contents vertically
+        ) {
+            // Centralized content, such as a title or image
+            CenteredContent(paddingValues, "Ciane")
+
+            // Add Navigation Buttons with vertical spacing between them
+            NavigationButton("Crea Gruppo", "createGroup", navController)
+            Spacer(modifier = Modifier.height(16.dp)) // Add spacing between buttons
+            NavigationButton("Unisciti A Un Gruppo", "enterGroup", navController)
+        }
     }
-    //Fa richiesta della lista di gruppi relativo all'utente
-    //Se utente non fa parte di nessun gruppo
 }
 
 @Composable
@@ -234,7 +258,7 @@ fun FirstPage(navController: NavHostController) {
         TopAppBar(
             title = {},
             navigationIcon = {
-                IconButton(onClick = {}) {
+                IconButton(onClick = {}, enabled = false) {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Transparent)
                 }
             },
@@ -274,6 +298,7 @@ fun FirstPage(navController: NavHostController) {
         }
     }
 }
+
 
 @Composable
 fun NavigationButton(text: String, destination: String, navController: NavHostController) {
