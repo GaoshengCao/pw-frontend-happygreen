@@ -1,5 +1,6 @@
 package com.example.frontend_happygreen
 
+import android.icu.text.CaseMap.Title
 import android.os.Bundle
 import android.provider.ContactsContract.CommonDataKinds.Email
 import androidx.activity.ComponentActivity
@@ -84,7 +85,9 @@ class MainActivity : ComponentActivity() {
                         composable("register"){ RegisterPage((navController))}
 //                        composable("createGroup"){ CreateGroupPage((navController))}
 //                        composable("enterGroup"){ EnterGroupPage((navController))}
-//                        composable("group"){ GroupPage((navController))}
+                        composable("group/{name}"){ backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name") ?: "???"
+                            GroupPage((navController,))}
 //                        composable("addPost"){ AddPostPage((navController))}
 //                        composable("comment"){ CommentPage((navController))}
 //                        composable("groupmap"){ GroupMapPage((navController))}
@@ -205,6 +208,17 @@ fun HomePage(navController: NavHostController) {
             NavigationButton("Unisciti A Un Gruppo", "enterGroup", navController)
         }
     }
+}
+
+//TODO
+@Composable
+fun GruppoHome(navController: NavHostController, name : String){
+    Box(modifier = Modifier.clickable {
+        navController.navigate("",name)
+    }){
+        Text(name)
+    }
+
 }
 
 @Composable
@@ -510,15 +524,15 @@ fun RegisterPage(navController: NavHostController) {
 //
 //}
 //
-//@Composable
-//fun GroupPage(navController: NavHostController) {
-//
-//    //Barra sopra Nome Gruppo
-//
-//    //Contenuto Tutti i Post
-//
-//    //Botton Bar
-//}
+@Composable
+fun GroupPage(navController: NavHostController, nome : String) {
+
+    //Barra sopra Nome Gruppo
+
+    //Contenuto Tutti i Post
+
+    //Botton Bar
+}
 //
 //@Composable
 //fun AddPostPage(navController: NavHostController) {
