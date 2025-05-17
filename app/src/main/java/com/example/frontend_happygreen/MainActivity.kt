@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
 //                        composable("enterGroup"){ EnterGroupPage((navController))}
                         composable("group/{name}"){ backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
-                            GroupPage((navController,))}
+                        GroupPage(navController,name)}
 //                        composable("addPost"){ AddPostPage((navController))}
 //                        composable("comment"){ CommentPage((navController))}
 //                        composable("groupmap"){ GroupMapPage((navController))}
@@ -187,6 +187,10 @@ fun CenteredContent(paddingValues: PaddingValues, text: String) {
 
 @Composable
 fun HomePage(navController: NavHostController) {
+
+    //Variabili Per Testare
+    val groups = listOf("Family", "Work", "Friends", "Study")
+
     Scaffold(
         topBar = { HeaderBar(navController, "HappyGreen") },
         bottomBar = { BottomNavBar(navController) }
@@ -199,8 +203,10 @@ fun HomePage(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
             verticalArrangement = Arrangement.Center // Center contents vertically
         ) {
-            // Centralized content, such as a title or image
-            CenteredContent(paddingValues, "Ciane")
+
+            groups.forEach { group ->
+                ElementGroup(navController = navController, name = group)
+            }
 
             // Add Navigation Buttons with vertical spacing between them
             NavigationButton("Crea Gruppo", "createGroup", navController)
@@ -212,13 +218,12 @@ fun HomePage(navController: NavHostController) {
 
 //TODO
 @Composable
-fun GruppoHome(navController: NavHostController, name : String){
+fun ElementGroup(navController: NavHostController, name : String){
     Box(modifier = Modifier.clickable {
-        navController.navigate("",name)
+        navController.navigate("group/$name");
     }){
         Text(name)
     }
-
 }
 
 @Composable
