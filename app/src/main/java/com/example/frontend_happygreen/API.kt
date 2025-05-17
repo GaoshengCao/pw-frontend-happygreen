@@ -149,215 +149,104 @@ data class User(
     @SerializedName("date_joined") val date_joined: String?
 )
 
-class Group {
-    @SerializedName("id")
-    var id: Int = 0
+data class Group(
+    @SerializedName("id") val id: Int,
+    @SerializedName("name") val name: String?,
+    @SerializedName("created_by") val created_by: Int,
+    @SerializedName("created_at") val created_at: String?
+)
 
-    @SerializedName("name")
-    var name: String? = null
+data class Membership(
+    @SerializedName("id") val id: Int,
+    @SerializedName("user") val user: Int,
+    @SerializedName("group") val group: Int,
+    @SerializedName("role") val role: String?,
+    @SerializedName("joined_at") val joined_at: String?
+)
 
-    @SerializedName("created_by")
-    var created_by: Int = 0
+data class Post(
+    @SerializedName("id") val id: Int,
+    @SerializedName("group") val group: Int,
+    @SerializedName("author") val author: Int,
+    @SerializedName("text") val text: String?,
+    @SerializedName("image") val image: String?,
+    @SerializedName("location_lat") val location_lat: Double?,
+    @SerializedName("location_lng") val location_lng: Double?,
+    @SerializedName("created_at") val created_at: String?
+)
 
-    @SerializedName("created_at")
-    var created_at: String? = null
-}
+data class Comment(
+    @SerializedName("id") val id: Int,
+    @SerializedName("post") val post: Int,
+    @SerializedName("author") val author: Int,
+    @SerializedName("text") val text: String?,
+    @SerializedName("created_at") val created_at: String?
+)
 
-class Membership {
-    @SerializedName("id")
-    var id: Int = 0
+data class ScannedObject(
+    @SerializedName("id") val id: Int,
+    @SerializedName("user") val user: Int,
+    @SerializedName("object_type") val object_type: String?,
+    @SerializedName("description") val description: String?,
+    @SerializedName("image") val image: String?,
+    @SerializedName("recognized_at") val recognized_at: String?,
+    @SerializedName("location_lat") val location_lat: Double?,
+    @SerializedName("location_lng") val location_lng: Double?
+)
 
-    @SerializedName("user")
-    var user: Int = 0
+data class Quiz(
+    @SerializedName("id") val id: Int,
+    @SerializedName("title") val title: String?,
+    @SerializedName("description") val description: String?
+)
 
-    @SerializedName("group")
-    var group: Int = 0
+data class QuizQuestion(
+    @SerializedName("id") val id: Int,
+    @SerializedName("quiz") val quiz: Int,
+    @SerializedName("question_text") val question_text: String?,
+    @SerializedName("correct_answer") val correct_answer: String?,
+    @SerializedName("wrong_answers") val wrong_answers: List<String>?
+)
 
-    @SerializedName("role")
-    var role: String? = null
+data class QuizResult(
+    @SerializedName("id") val id: Int,
+    @SerializedName("quiz") val quiz: Int,
+    @SerializedName("user") val user: Int,
+    @SerializedName("score") val score: Int,
+    @SerializedName("completed_at") val completed_at: String?
+)
 
-    @SerializedName("joined_at")
-    var joined_at: String? = null
-}
+data class Badge(
+    @SerializedName("id") val id: Int,
+    @SerializedName("name") val name: String?,
+    @SerializedName("description") val description: String?,
+    @SerializedName("icon") val icon: String?
+)
 
-class Post {
-    @SerializedName("id")
-    var id: Int = 0
+data class UserBadge(
+    @SerializedName("id") val id: Int,
+    @SerializedName("user") val user: Int,
+    @SerializedName("badge") val badge: Int,
+    @SerializedName("earned_at") val earned_at: String?
+)
 
-    @SerializedName("group")
-    var group: Int = 0
+data class EcoProduct(
+    @SerializedName("id") val id: Int,
+    @SerializedName("barcode") val barcode: String?,
+    @SerializedName("name") val name: String?,
+    @SerializedName("brand") val brand: String?,
+    @SerializedName("eco_score") val eco_score: String?,
+    @SerializedName("sustainable_alt") val sustainable_alt: List<String>?
+)
 
-    @SerializedName("author")
-    var author: Int = 0
+data class WasteClassification(
+    @SerializedName("id") val id: Int,
+    @SerializedName("material") val material: String?,
+    @SerializedName("bin_color") val bin_color: String?,
+    @SerializedName("instructions") val instructions: String?,
+    @SerializedName("image") val image: String?
+)
 
-    @SerializedName("text")
-    var text: String? = null
-
-    @SerializedName("image")
-    var image: String? = null
-
-    @SerializedName("location_lat")
-    var location_lat: Double? = null
-
-    @SerializedName("location_lng")
-    var location_lng: Double? = null
-
-    @SerializedName("created_at")
-    var created_at: String? = null
-}
-
-class Comment {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("post")
-    var post: Int = 0
-
-    @SerializedName("author")
-    var author: Int = 0
-
-    @SerializedName("text")
-    var text: String? = null
-
-    @SerializedName("created_at")
-    var created_at: String? = null
-}
-
-class ScannedObject {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("user")
-    var user: Int = 0
-
-    @SerializedName("object_type")
-    var object_type: String? = null
-
-    @SerializedName("description")
-    var description: String? = null
-
-    @SerializedName("image")
-    var image: String? = null
-
-    @SerializedName("recognized_at")
-    var recognized_at: String? = null
-
-    @SerializedName("location_lat")
-    var location_lat: Double? = null
-
-    @SerializedName("location_lng")
-    var location_lng: Double? = null
-}
-
-class Quiz {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("title")
-    var title: String? = null
-
-    @SerializedName("description")
-    var description: String? = null
-}
-
-class QuizQuestion {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("quiz")
-    var quiz: Int = 0
-
-    @SerializedName("question_text")
-    var question_text: String? = null
-
-    @SerializedName("correct_answer")
-    var correct_answer: String? = null
-
-    @SerializedName("wrong_answers")
-    var wrong_answers: List<String>? = null
-}
-
-class QuizResult {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("quiz")
-    var quiz: Int = 0
-
-    @SerializedName("user")
-    var user: Int = 0
-
-    @SerializedName("score")
-    var score: Int = 0
-
-    @SerializedName("completed_at")
-    var completed_at: String? = null
-}
-
-class Badge {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("name")
-    var name: String? = null
-
-    @SerializedName("description")
-    var description: String? = null
-
-    @SerializedName("icon")
-    var icon: String? = null
-}
-
-class UserBadge {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("user")
-    var user: Int = 0
-
-    @SerializedName("badge")
-    var badge: Int = 0
-
-    @SerializedName("earned_at")
-    var earned_at: String? = null
-}
-
-class EcoProduct {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("barcode")
-    var barcode: String? = null
-
-    @SerializedName("name")
-    var name: String? = null
-
-    @SerializedName("brand")
-    var brand: String? = null
-
-    @SerializedName("eco_score")
-    var eco_score: String? = null
-
-    @SerializedName("sustainable_alt")
-    var sustainable_alt: List<String>? = null
-}
-
-class WasteClassification {
-    @SerializedName("id")
-    var id: Int = 0
-
-    @SerializedName("material")
-    var material: String? = null
-
-    @SerializedName("bin_color")
-    var bin_color: String? = null
-
-    @SerializedName("instructions")
-    var instructions: String? = null
-
-    @SerializedName("image")
-    var image: String? = null
-}
 
 
 // Retrofit instance
