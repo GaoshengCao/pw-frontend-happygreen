@@ -1,15 +1,7 @@
 package com.example.frontend_happygreen
-import com.example.frontend_happygreen.models.Badge
-import com.example.frontend_happygreen.models.Comment
-import com.example.frontend_happygreen.models.EcoProduct
-import com.example.frontend_happygreen.models.Group
-import com.example.frontend_happygreen.models.Membership
-import com.example.frontend_happygreen.models.Post
-import com.example.frontend_happygreen.models.Quiz
-import com.example.frontend_happygreen.models.ScannedObject
-import com.example.frontend_happygreen.models.User
-import com.example.frontend_happygreen.models.WasteClassification
+import android.util.Log
 import com.google.gson.annotations.SerializedName
+import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -24,10 +16,10 @@ interface ApiService {
     val users: Call<List<User?>?>?
 
     @POST("users/")
-    fun createUser(@Body user: User?): Call<User?>?
+    suspend fun createUser(@Body user: User?): Call<User?>?
 
     @GET("users/{id}/")
-    fun getUser(@Path("id") id: Int): Call<User?>?
+    suspend fun getUser(@Path("id") id: Int): User
 
     @get:GET("groups/")
     val groups: Call<List<Any?>?>?
@@ -116,7 +108,14 @@ interface ApiService {
 
     @POST("token/refresh/")
     fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): Call<TokenResponse?>?
+
+
+
+
+
 }
+
+
 
 class TokenRequest {
     @SerializedName("username")
@@ -139,25 +138,16 @@ class TokenResponse {
     var refresh: String? = null
 }
 
-class User {
-    @SerializedName("id")
-    var id: Int = 0
 
-    @SerializedName("username")
-    var username: String? = null
 
-    @SerializedName("profile_pic")
-    var profile_pic: String? = null
-
-    @SerializedName("points")
-    var points: Int = 0
-
-    @SerializedName("level")
-    var level: Int = 0
-
-    @SerializedName("date_joined")
-    var date_joined: String? = null
-}
+data class User(
+    @SerializedName("id") val id: Int,
+    @SerializedName("username") val username: String?,
+    @SerializedName("profile_pic") val profile_pic: String?,
+    @SerializedName("points") val points: Int,
+    @SerializedName("level") val level: Int,
+    @SerializedName("date_joined") val date_joined: String?
+)
 
 class Group {
     @SerializedName("id")
@@ -373,13 +363,36 @@ class WasteClassification {
 // Retrofit instance
 object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
-    private const val BASE_URL = ""
+    private const val BASE_URL = "https://3cbd-45-13-91-6.ngrok-free.app/"
 
-    val api: ApiService by lazy {
-        Retrofit.Builder()
+//    val api: ApiService by lazy {
+//        Retrofit.Builder()
+//            .baseUrl(BASE_URL)
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//            .create(ApiService::class.java)
+//    }
+
+    fun create(token: String): ApiService {
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", "Bearer $token")
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+
+        return Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
     }
+
+
 }
+
+
+
