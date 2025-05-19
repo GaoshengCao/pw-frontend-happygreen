@@ -1,9 +1,9 @@
 package com.example.frontend_happygreen
 
-
 import android.icu.text.CaseMap.Title
 import android.os.Bundle
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.view.WindowInsets
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,11 +22,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -48,6 +54,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
@@ -55,6 +62,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +70,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -75,13 +84,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             FrontendhappygreenTheme {
                 val navController = rememberNavController()
-                Surface (modifier = Modifier.fillMaxSize()){
+                Surface (modifier = Modifier.fillMaxSize()
+                ){
                     NavHost(
                         navController = navController,
-                        startDestination = "first"
+                        startDestination = "home"
                     ) {
                         composable("first"){ FirstPage((navController))}
                         composable("login"){ LoginPage((navController)) }
@@ -99,7 +110,7 @@ class MainActivity : ComponentActivity() {
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
                         composable("home") { HomePage(navController) }
-                        composable("profile") { UserPage(navController) }
+                        composable("user") { UserPage(navController) }
                         composable("options") { OptionsPage(navController) }
                     }
                 }
@@ -116,7 +127,8 @@ fun HeaderBar(navController: NavHostController, title:String) {
         title = {
             Text(
                 text = title,
-                fontSize = 20.sp
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black
             )
         },
         modifier = Modifier
@@ -190,9 +202,13 @@ fun CenteredContent(paddingValues: PaddingValues, text: String) {
     }
 }
 
+
+
+//
+// 3 (HOME)
+//
 @Composable
 fun HomePage(navController: NavHostController) {
-
     //Variabili Per Testare
     val groups = listOf("Family", "Work", "Friends", "Study")
 
@@ -204,33 +220,204 @@ fun HomePage(navController: NavHostController) {
         Column(
             modifier = Modifier
                 .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .verticalScroll(rememberScrollState())
                 .fillMaxSize(), // Make sure the column takes up the available space
+
             horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
-            verticalArrangement = Arrangement.Center // Center contents vertically
+            verticalArrangement = Arrangement.Top // Center contents vertically
+
         ) {
 
             groups.forEach { group ->
                 ElementGroup(navController = navController, name = group)
             }
-
             // Add Navigation Buttons with vertical spacing between them
+            Spacer(modifier = Modifier.height(16.dp))
             NavigationButton("Crea Gruppo", "createGroup", navController)
-            Spacer(modifier = Modifier.height(16.dp)) // Add spacing between buttons
-            NavigationButton("Unisciti A Un Gruppo", "enterGroup", navController)
+            Spacer(modifier = Modifier.height(4.dp))
+            NavigationButton("Unisciti Gruppo", "enterGroup", navController)
         }
     }
 }
 
-//TODO
 @Composable
 fun ElementGroup(navController: NavHostController, name : String){
-    Box(modifier = Modifier.clickable {
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)
+        .background(Color.LightGray)
+        .clickable {
         navController.navigate("group/$name");
-    }){
-        Text(name)
+    },
+    ){
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Text(
+                text = name,
+                style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
+
+                modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    navController.navigate("group/$name")
+                },
+                contentPadding = PaddingValues(8.dp),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Go to group"
+                )
+            }
+        }
     }
 }
 
+//
+// 7 (Group Page)
+//
+@Composable
+fun GroupPage(navController: NavHostController, nome : String) {
+    //Variabile per testare
+    val posts = listOf("Post 1", "Post 2", "Post 3", "Post 4")
+
+    Scaffold(
+        topBar = { GroupHeaderBar(navController, nome) },
+        bottomBar = { BottomNavBar(navController) }
+    ) { paddingValues ->
+        // Main content inside the Scaffold, using Column to organize UI elements vertically
+        Column(
+            modifier = Modifier
+                .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .verticalScroll(rememberScrollState())
+                .fillMaxSize(), // Make sure the column takes up the available space
+
+            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
+            verticalArrangement = Arrangement.Top // Center contents vertically
+
+        ) {
+
+            posts.forEach { post ->
+                ElementPost(navController = navController, name = post)
+            }
+        }
+    }
+}
+//TODO
+@Composable
+fun ElementPost(navController: NavHostController, name: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(Color.LightGray)
+            .clickable {
+                navController.navigate("group/$name")
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            // Title
+            Text(
+                text = name,
+                style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Image placeholder
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .background(Color.DarkGray), // Replace with Image if needed
+                contentAlignment = Alignment.Center
+            ) {
+//                Image()
+            }
+
+            // Text + Button Section
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Description or preview text
+                Text(
+                    text = "Group preview or description goes here...",
+                    modifier = Modifier.weight(1f),
+                    style = TextStyle(fontSize = 16.sp)
+                )
+
+                // Button on the left side
+                Button(
+                    onClick = {
+                        navController.navigate("group/$name")
+                    },
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .height(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = "Go to group"
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+//TODO NAVIGAZIONE ALTRE PAGINE
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GroupHeaderBar(navController: NavHostController, title: String) {
+    TopAppBar(
+        title = {
+            Text(
+                text = title,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(99, 169, 177))
+            .clickable { /*TODO NAVIGATE (MapPage)*/ },
+        actions = {
+            IconButton(onClick = {
+                // TODO: Add navigation or action for the plus button
+                // Example: navController.navigate("addPost")
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.AddCircle,
+                    contentDescription = "Add",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(35.dp)
+                )
+
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
+
+
+
+//TODO
 @Composable
 fun GamePage(navController: NavHostController) {
     Scaffold(
@@ -241,6 +428,7 @@ fun GamePage(navController: NavHostController) {
     }
 }
 
+//TODO
 @Composable
 fun CameraPage(navController: NavHostController) {
     Scaffold(
@@ -251,16 +439,18 @@ fun CameraPage(navController: NavHostController) {
     }
 }
 
+//TODO
 @Composable
 fun UserPage(navController: NavHostController) {
     Scaffold(
         topBar = { HeaderBar(navController,"Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        CenteredContent(paddingValues, "Utente")
+        CenteredContent(paddingValues, "User")
     }
 }
 
+//TODO
 @Composable
 fun OptionsPage(navController: NavHostController) {
     Scaffold(
@@ -271,6 +461,7 @@ fun OptionsPage(navController: NavHostController) {
     }
 }
 
+//Pagina quando apri l'app per la prima volta
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FirstPage(navController: NavHostController) {
@@ -323,7 +514,7 @@ fun FirstPage(navController: NavHostController) {
     }
 }
 
-
+//Semplici Bottoni di Navigazione
 @Composable
 fun NavigationButton(text: String, destination: String, navController: NavHostController) {
     Button(
@@ -335,10 +526,13 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
     }
 }
 
+//Pagina Per effettuare il Login
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPage(navController: NavHostController) {
-    val coroutineScope = rememberCoroutineScope()
+
+    //  Per API
+//    val coroutineScope = rememberCoroutineScope()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -403,14 +597,12 @@ fun LoginPage(navController: NavHostController) {
             Button(
                 onClick = {
 
-
+//Riguardare Quando Fare API request
 //                    val apiService = RetrofitInstance.api
-                    val apiService = RetrofitInstance.create("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3NDk4OTExLCJpYXQiOjE3NDc0OTg2MTEsImp0aSI6IjEyMjQ2NGE4NzExMTQzYTRiNDllNGFmMjA3MTNmYzMwIiwidXNlcl9pZCI6MX0.s9kHrkQ0qLTlKrZJ64TYyrLuuMFhKVPOBe0aJnkdcyw")
-                    coroutineScope.launch {
-                        val nome = getUsernameById(apiService, 1)
-                    }
-
-
+//                    val apiService = RetrofitInstance.create("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3NDk4OTExLCJpYXQiOjE3NDc0OTg2MTEsImp0aSI6IjEyMjQ2NGE4NzExMTQzYTRiNDllNGFmMjA3MTNmYzMwIiwidXNlcl9pZCI6MX0.s9kHrkQ0qLTlKrZJ64TYyrLuuMFhKVPOBe0aJnkdcyw")
+//                    coroutineScope.launch {
+//                        val nome = getUsernameById(apiService, 1)
+//                    }
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
@@ -422,8 +614,7 @@ fun LoginPage(navController: NavHostController) {
     }
 }
 
-
-
+//Pagina Per effettuare la registrazione
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterPage(navController: NavHostController) {
@@ -513,21 +704,7 @@ fun RegisterPage(navController: NavHostController) {
     }
 }
 
-
-
 //TODO
-//Controllo Sessione se utente è Acceduto
-//Controllo su utente fa parte di gruppi
-//
-//Pagine della NavBar
-
-
-
-
-
-//
-
-//
 //@Composable
 //fun CreateGroupPage(navController: NavHostController) {
 //
@@ -536,7 +713,7 @@ fun RegisterPage(navController: NavHostController) {
 //
 //
 //}
-//
+//TODO
 //@Composable
 //fun EnterGroupPage(navController: NavHostController) {
 //
@@ -545,15 +722,7 @@ fun RegisterPage(navController: NavHostController) {
 //
 //}
 //
-@Composable
-fun GroupPage(navController: NavHostController, nome : String) {
 
-    //Barra sopra Nome Gruppo
-
-    //Contenuto Tutti i Post
-
-    //Botton Bar
-}
 //
 //@Composable
 //fun AddPostPage(navController: NavHostController) {

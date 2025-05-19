@@ -28,7 +28,7 @@ interface ApiService {
     fun createGroup(@Body group: Group?): Call<Group?>?
 
     @GET("groups/{id}/")
-    fun getGroup(@Path("id") id: Int): Call<Group?>?
+    fun getGroup(@Path("id") id: Int): Group
 
     @get:GET("memberships/")
     val memberships: Call<List<Membership?>?>?
@@ -46,7 +46,7 @@ interface ApiService {
     fun createPost(@Body post: Post?): Call<Post?>?
 
     @GET("posts/{id}/")
-    fun getPost(@Path("id") id: Int): Call<Post?>?
+    fun getPost(@Path("id") id: Int): Post
 
     @get:GET("comments/")
     val comments: Call<List<Any?>?>?
@@ -73,7 +73,7 @@ interface ApiService {
     fun createQuiz(@Body quiz: Quiz?): Call<Quiz?>?
 
     @GET("quizzes/{id}/")
-    fun getQuiz(@Path("id") id: Int): Call<Quiz?>?
+    fun getQuiz(@Path("id") id: Int): Quiz
 
     @get:GET("badges/")
     val badges: Call<List<Badge?>?>?
@@ -91,7 +91,7 @@ interface ApiService {
     fun createEcoProduct(@Body product: EcoProduct?): Call<EcoProduct?>?
 
     @GET("eco-products/{id}/")
-    fun getEcoProduct(@Path("id") id: Int): Call<EcoProduct?>?
+    fun getEcoProduct(@Path("id") id: Int): EcoProduct
 
     @get:GET("waste-classifications/")
     val wasteClassifications: Call<List<WasteClassification?>?>?
@@ -108,10 +108,6 @@ interface ApiService {
 
     @POST("token/refresh/")
     fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): Call<TokenResponse?>?
-
-
-
-
 
 }
 
@@ -148,14 +144,12 @@ data class User(
     @SerializedName("level") val level: Int,
     @SerializedName("date_joined") val date_joined: String?
 )
-
 data class Group(
     @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String?,
     @SerializedName("created_by") val created_by: Int,
     @SerializedName("created_at") val created_at: String?
 )
-
 data class Membership(
     @SerializedName("id") val id: Int,
     @SerializedName("user") val user: Int,
@@ -163,7 +157,6 @@ data class Membership(
     @SerializedName("role") val role: String?,
     @SerializedName("joined_at") val joined_at: String?
 )
-
 data class Post(
     @SerializedName("id") val id: Int,
     @SerializedName("group") val group: Int,
@@ -174,7 +167,6 @@ data class Post(
     @SerializedName("location_lng") val location_lng: Double?,
     @SerializedName("created_at") val created_at: String?
 )
-
 data class Comment(
     @SerializedName("id") val id: Int,
     @SerializedName("post") val post: Int,
@@ -182,7 +174,6 @@ data class Comment(
     @SerializedName("text") val text: String?,
     @SerializedName("created_at") val created_at: String?
 )
-
 data class ScannedObject(
     @SerializedName("id") val id: Int,
     @SerializedName("user") val user: Int,
@@ -193,13 +184,11 @@ data class ScannedObject(
     @SerializedName("location_lat") val location_lat: Double?,
     @SerializedName("location_lng") val location_lng: Double?
 )
-
 data class Quiz(
     @SerializedName("id") val id: Int,
     @SerializedName("title") val title: String?,
     @SerializedName("description") val description: String?
 )
-
 data class QuizQuestion(
     @SerializedName("id") val id: Int,
     @SerializedName("quiz") val quiz: Int,
@@ -207,7 +196,6 @@ data class QuizQuestion(
     @SerializedName("correct_answer") val correct_answer: String?,
     @SerializedName("wrong_answers") val wrong_answers: List<String>?
 )
-
 data class QuizResult(
     @SerializedName("id") val id: Int,
     @SerializedName("quiz") val quiz: Int,
@@ -215,21 +203,18 @@ data class QuizResult(
     @SerializedName("score") val score: Int,
     @SerializedName("completed_at") val completed_at: String?
 )
-
 data class Badge(
     @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String?,
     @SerializedName("description") val description: String?,
     @SerializedName("icon") val icon: String?
 )
-
 data class UserBadge(
     @SerializedName("id") val id: Int,
     @SerializedName("user") val user: Int,
     @SerializedName("badge") val badge: Int,
     @SerializedName("earned_at") val earned_at: String?
 )
-
 data class EcoProduct(
     @SerializedName("id") val id: Int,
     @SerializedName("barcode") val barcode: String?,
@@ -238,7 +223,6 @@ data class EcoProduct(
     @SerializedName("eco_score") val eco_score: String?,
     @SerializedName("sustainable_alt") val sustainable_alt: List<String>?
 )
-
 data class WasteClassification(
     @SerializedName("id") val id: Int,
     @SerializedName("material") val material: String?,

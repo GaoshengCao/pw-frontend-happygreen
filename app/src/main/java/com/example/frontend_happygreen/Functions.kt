@@ -25,7 +25,7 @@ suspend fun getGroupNameById(api: ApiService, id: Int): String? {
 suspend fun getPostTextById(api: ApiService, id: Int): String? {
     return try {
         val post = api.getPost(id)
-        post?.text
+        post.text
     } catch (e: Exception) {
         Log.e("API", "Error fetching post: ${e.message}")
         null
@@ -35,7 +35,7 @@ suspend fun getPostTextById(api: ApiService, id: Int): String? {
 suspend fun getEcoProductNameById(api: ApiService, id: Int): String? {
     return try {
         val product = api.getEcoProduct(id)
-        product?.name
+        product.name
     } catch (e: Exception) {
         Log.e("API", "Error fetching eco product: ${e.message}")
         null
@@ -45,7 +45,7 @@ suspend fun getEcoProductNameById(api: ApiService, id: Int): String? {
 suspend fun getQuizTitleById(api: ApiService, id: Int): String? {
     return try {
         val quiz = api.getQuiz(id)
-        quiz?.title
+        quiz.title
     } catch (e: Exception) {
         Log.e("API", "Error fetching quiz: ${e.message}")
         null
