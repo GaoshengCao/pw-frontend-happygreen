@@ -11,14 +11,21 @@ suspend fun loginUser(api: ApiService, username: String, password: String): Stri
     }
 }
 
-suspend fun registerUser(api: ApiService, username: String,password: String): String? {
-    val request = LoginRequest(username,password)
-    return try {
-        val api = RetrofitInstance.api.register(request)
-        api.toString() // TODO VEDERE COSA RITORNA
-    }catch(e:Exception){
-        return e.message
-        //return null
+suspend fun registerUser(api: ApiService, username: String, password: String): String {
+    if (username.isBlank() || password.isBlank()) {
+        return "Username and password cannot be empty"
     }
 
+    val request = NewUser(username, password)
+    return try {
+        val response = api.register(request)
+        if (response.isSuccessful) {
+            val user = response.body()
+            "Registered user: ${user?.username}"
+        } else {
+            "Registration failed: ${response.errorBody()?.string()}"
+        }
+    } catch (e: Exception) {
+        "Error: ${e.message}"
+    }
 }

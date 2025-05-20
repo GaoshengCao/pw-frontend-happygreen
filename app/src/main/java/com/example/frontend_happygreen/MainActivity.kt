@@ -416,6 +416,8 @@ fun RegisterPage(navController: NavHostController) {
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
 
+    var risultato by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -474,26 +476,23 @@ fun RegisterPage(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    val apiService = RetrofitInstance.api
                     coroutineScope.launch {
                         //Crea L'utente
-                        registerUser(apiService,username,password) //TODO CONTROLLARE COSA RESTITUISCE
-                        //Se Successo Salva il nuovo Token
-                        SecureStorage.saveToken(context, loginUser(apiService, username,password))
+                        val apiService = RetrofitInstance.api
+                        val result = registerUser(apiService,username,password) //TODO CONTROLLARE COSA RESTITUISCE
+                        if (result != "Registered user: $username")
+                        {
+                            SecureStorage.saveToken(context, loginUser(apiService, username,password))
+                            navController.navigate("home")
+                        }else{
+                            risultato = result
+                        }
+
                     }
                 },
                 shape = RoundedCornerShape(5.dp),
@@ -502,6 +501,7 @@ fun RegisterPage(navController: NavHostController) {
             ) {
                 Text("Register")
             }
+            Text(risultato)
         }
     }
 }

@@ -28,8 +28,8 @@ interface ApiService {
     @POST("token/")
     suspend fun getToken(@Body tokenRequest: LoginRequest): LoginResponse
 
-    @POST("token/")
-    suspend fun register(@Body loginRequest: LoginRequest) : Call<LoginRequest>
+    @POST("users/")
+    suspend fun register(@Body newUser: NewUser): retrofit2.Response<NewUser>
 
     @POST("token/refresh/")
     suspend fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): LoginResponse
@@ -50,11 +50,14 @@ data class LoginResponse(
 data class User(
     @SerializedName("id") val id: Int,
     @SerializedName("username") val username: String?,
-    @SerializedName("password") val password: String?,
     @SerializedName("profile_pic") val profile_pic: String?,
     @SerializedName("points") val points: Int,
     @SerializedName("level") val level: Int,
     @SerializedName("date_joined") val date_joined: String?
+)
+data class NewUser(
+    @SerializedName("username") val username: String?,
+    @SerializedName("password") val password: String?,
 )
 data class Group(
     @SerializedName("id") val id: Int,
