@@ -2,6 +2,7 @@ package com.example.frontend_happygreen
 import android.util.Log
 import com.google.gson.annotations.SerializedName
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -12,130 +13,40 @@ import retrofit2.http.Path
 
 
 interface ApiService {
-    @get:GET("users/")
-    val users: Call<List<User?>?>?
-
-    @POST("users/")
-    suspend fun createUser(@Body user: User?): Call<User?>?
-
     @GET("users/{id}/")
     suspend fun getUser(@Path("id") id: Int): User
-
-    @get:GET("groups/")
-    val groups: Call<List<Any?>?>?
-
-    @POST("groups/")
-    fun createGroup(@Body group: Group?): Call<Group?>?
 
     @GET("groups/{id}/")
     fun getGroup(@Path("id") id: Int): Group
 
-    @get:GET("memberships/")
-    val memberships: Call<List<Membership?>?>?
-
-    @POST("memberships/")
-    fun createMembership(@Body membership: Membership?): Call<Membership?>?
-
-    @GET("memberships/{id}/")
-    fun getMembership(@Path("id") id: Int): Call<Membership?>?
-
-    @get:GET("posts/")
-    val posts: Call<List<Post?>?>?
-
-    @POST("posts/")
-    fun createPost(@Body post: Post?): Call<Post?>?
-
     @GET("posts/{id}/")
     fun getPost(@Path("id") id: Int): Post
-
-    @get:GET("comments/")
-    val comments: Call<List<Any?>?>?
-
-    @POST("comments/")
-    fun createComment(@Body comment: Comment?): Call<Comment?>?
-
-    @GET("comments/{id}/")
-    fun getComment(@Path("id") id: Int): Call<Comment?>?
-
-    @get:GET("scanned-objects/")
-    val scannedObjects: Call<List<ScannedObject?>?>?
-
-    @POST("scanned-objects/")
-    fun createScannedObject(@Body `object`: ScannedObject?): Call<ScannedObject?>?
-
-    @GET("scanned-objects/{id}/")
-    fun getScannedObject(@Path("id") id: Int): Call<ScannedObject?>?
-
-    @get:GET("quizzes/")
-    val quizzes: Call<List<Quiz?>?>?
-
-    @POST("quizzes/")
-    fun createQuiz(@Body quiz: Quiz?): Call<Quiz?>?
 
     @GET("quizzes/{id}/")
     fun getQuiz(@Path("id") id: Int): Quiz
 
-    @get:GET("badges/")
-    val badges: Call<List<Badge?>?>?
-
-    @POST("badges/")
-    fun createBadge(@Body badge: Badge?): Call<Badge?>?
-
-    @GET("badges/{id}/")
-    fun getBadge(@Path("id") id: Int): Call<Badge?>?
-
-    @get:GET("eco-products/")
-    val ecoProducts: Call<List<EcoProduct?>?>?
-
-    @POST("eco-products/")
-    fun createEcoProduct(@Body product: EcoProduct?): Call<EcoProduct?>?
-
-    @GET("eco-products/{id}/")
-    fun getEcoProduct(@Path("id") id: Int): EcoProduct
-
-    @get:GET("waste-classifications/")
-    val wasteClassifications: Call<List<WasteClassification?>?>?
-
-    @POST("waste-classifications/")
-    fun createWasteClassification(@Body waste: WasteClassification?): Call<WasteClassification?>?
-
-    @GET("waste-classifications/{id}/")
-    fun getWasteClassification(@Path("id") id: Int): Call<WasteClassification?>?
-
-    // Token Auth
     @POST("token/")
-    fun getToken(@Body tokenRequest: TokenRequest?): Call<TokenResponse?>?
+    fun getToken(@Body tokenRequest: LoginRequest): LoginResponse
+
+    @POST("users/")
+    fun register(@Body loginRequest: LoginRequest) : Call<LoginRequest>
 
     @POST("token/refresh/")
-    fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): Call<TokenResponse?>?
+    fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): LoginResponse
 
 }
 
-
-
-class TokenRequest {
-    @SerializedName("username")
-    var username: String? = null
-
-    @SerializedName("password")
-    var password: String? = null
-}
-
-class RefreshTokenRequest {
-    @SerializedName("refresh")
-    var refresh: String? = null
-}
-
-class TokenResponse {
-    @SerializedName("access")
-    var access: String? = null
-
-    @SerializedName("refresh")
-    var refresh: String? = null
-}
-
-
-
+data class LoginRequest(
+    @SerializedName("username") val username: String?,
+    @SerializedName("password") val password: String?
+)
+class RefreshTokenRequest (
+    @SerializedName("refresh") val refresh: String?
+)
+data class LoginResponse(
+    @SerializedName("access") val access: String?,
+    @SerializedName("refresh") val refresh: String?
+)
 data class User(
     @SerializedName("id") val id: Int,
     @SerializedName("username") val username: String?,
@@ -231,20 +142,17 @@ data class WasteClassification(
     @SerializedName("image") val image: String?
 )
 
-
-
-// Retrofit instance
 object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
     private const val BASE_URL = "https://3cbd-45-13-91-6.ngrok-free.app/"
 
-//    val api: ApiService by lazy {
-//        Retrofit.Builder()
-//            .baseUrl(BASE_URL)
-//            .addConverterFactory(GsonConverterFactory.create())
-//            .build()
-//            .create(ApiService::class.java)
-//    }
+    val api: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+    }
 
     fun create(token: String): ApiService {
         val client = OkHttpClient.Builder()

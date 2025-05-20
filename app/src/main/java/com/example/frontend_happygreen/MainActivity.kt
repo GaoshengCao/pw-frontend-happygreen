@@ -1,5 +1,7 @@
 package com.example.frontend_happygreen
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.icu.text.CaseMap.Title
 import android.os.Bundle
 import android.provider.ContactsContract.CommonDataKinds.Email
@@ -60,6 +62,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -77,8 +80,42 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.example.frontend_happygreen.ui.theme.FrontendhappygreenTheme
 import kotlinx.coroutines.launch
+
+object SecureStorage {
+
+    private fun getSharedPrefs(context: Context): SharedPreferences {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        return EncryptedSharedPreferences.create(
+            context,
+            "secure_prefs",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    fun saveToken(context: Context, token: String?) {
+        getSharedPrefs(context)
+            .edit()
+            .putString("auth_token", token)
+            .apply()
+    }
+
+    fun getToken(context: Context): String? {
+        return getSharedPrefs(context).getString("auth_token", null)
+    }
+
+    fun clearToken(context: Context) {
+        getSharedPrefs(context).edit().remove("auth_token").apply()
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,28 +125,33 @@ class MainActivity : ComponentActivity() {
         setContent {
             FrontendhappygreenTheme {
                 val navController = rememberNavController()
+                val context = LocalContext.current.applicationContext
+                var page = "home"
+                if (SecureStorage.getToken(context) == null){
+                    page = "first"
+                }
+
+
                 Surface (modifier = Modifier.fillMaxSize()
                 ){
                     NavHost(
                         navController = navController,
-                        startDestination = "home"
+                        startDestination = page
                     ) {
-                        composable("first"){ FirstPage((navController))}
-                        composable("login"){ LoginPage((navController)) }
-                        composable("register"){ RegisterPage((navController))}
-//                        composable("createGroup"){ CreateGroupPage((navController))}
-//                        composable("enterGroup"){ EnterGroupPage((navController))}
+                        composable("first"){ FirstPage((navController))} // 1
+                        composable("login"){ LoginPage((navController)) } // 2
+                        composable("register"){ RegisterPage((navController))} // 3
+                        composable("home") { HomePage(navController) } // 4
+//                        composable("createGroup"){ CreateGroupPage((navController))} // 5
+//                        composable("enterGroup"){ EnterGroupPage((navController))} // 6
+//                        composable("groupmap"){ GroupMapPage((navController))} // 8
                         composable("group/{name}"){ backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
-                        GroupPage(navController,name)}
-//                        composable("addPost"){ AddPostPage((navController))}
-//                        composable("comment"){ CommentPage((navController))}
-//                        composable("groupmap"){ GroupMapPage((navController))}
-
-
+                        GroupPage(navController,name)} // 7
+//                        composable("addPost"){ AddPostPage((navController))} // 9
+//                        composable("comment"){ CommentPage((navController))} // 10
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
-                        composable("home") { HomePage(navController) }
                         composable("user") { UserPage(navController) }
                         composable("options") { OptionsPage(navController) }
                     }
@@ -202,10 +244,262 @@ fun CenteredContent(paddingValues: PaddingValues, text: String) {
     }
 }
 
+//
+// 1(FirstPage)
+//
+//Pagina quando apri l'app per la prima volta
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FirstPage(navController: NavHostController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = {}, enabled = false) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Transparent)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
 
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(79, 149, 157)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+            Text(
+                text = "Happy Green",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(200.dp))
+
+            NavigationButton(
+                text = "Login",
+                destination = "login",
+                navController = navController
+            )
+            NavigationButton(
+                text = "Register",
+                destination = "register",
+                navController = navController
+            )
+        }
+    }
+}
 
 //
-// 3 (HOME)
+// 2 (LoginPage)
+//
+//Pagina Per effettuare il Login
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginPage(navController: NavHostController) {
+    //  Per API
+    val coroutineScope = rememberCoroutineScope()
+    //Salvataggio Token
+    val context = LocalContext.current.applicationContext
+    val token = remember { mutableStateOf<String?>(null) }
+
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Content container with centered alignment and full width
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)  // fill remaining height
+                .padding(horizontal = 0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+            Text(
+                text = "Happy Green",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    val apiService = RetrofitInstance.api
+                    coroutineScope.launch {
+                        SecureStorage.saveToken(context, loginUser(apiService, username,password))
+                    }
+                },
+                shape = RoundedCornerShape(5.dp),
+                modifier = Modifier.fillMaxWidth(0.4f),
+                enabled = username.isNotBlank() && password.isNotBlank()
+            ) {
+                Text("Login")
+            }
+        }
+    }
+}
+
+//
+// 3(RegisterPage)
+//
+//Pagina Per effettuare la registrazione
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RegisterPage(navController: NavHostController) {
+    //  Per API
+    val coroutineScope = rememberCoroutineScope()
+    //Salvataggio Token
+    val context = LocalContext.current.applicationContext
+    val token = remember { mutableStateOf<String?>(null) }
+
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+
+            Text(
+                text = "Happy Green",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    val apiService = RetrofitInstance.api
+                    coroutineScope.launch {
+                        //Crea L'utente
+                        registerUser(apiService,username,password) //TODO CONTROLLARE COSA RESTITUISCE
+                        //Se Successo Salva il nuovo Token
+                        SecureStorage.saveToken(context, loginUser(apiService, username,password))
+                    }
+                },
+                shape = RoundedCornerShape(5.dp),
+                modifier = Modifier.fillMaxWidth(0.4f),
+                enabled = username.isNotBlank() && password.isNotBlank()
+            ) {
+                Text("Register")
+            }
+        }
+    }
+}
+
+//
+// 4 (HOME)
 //
 @Composable
 fun HomePage(navController: NavHostController) {
@@ -461,58 +755,6 @@ fun OptionsPage(navController: NavHostController) {
     }
 }
 
-//Pagina quando apri l'app per la prima volta
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FirstPage(navController: NavHostController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(79, 149, 157))
-    ) {
-        TopAppBar(
-            title = {},
-            navigationIcon = {
-                IconButton(onClick = {}, enabled = false) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Transparent)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(79, 149, 157)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-
-        ) {
-            Spacer(modifier = Modifier.height(100.dp))
-            Text(
-                text = "Happy Green",
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(200.dp))
-
-            NavigationButton(
-                text = "Login",
-                destination = "login",
-                navController = navController
-            )
-            NavigationButton(
-                text = "Register",
-                destination = "register",
-                navController = navController
-            )
-        }
-    }
-}
 
 //Semplici Bottoni di Navigazione
 @Composable
@@ -526,183 +768,8 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
     }
 }
 
-//Pagina Per effettuare il Login
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LoginPage(navController: NavHostController) {
 
-    //  Per API
-//    val coroutineScope = rememberCoroutineScope()
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(79, 149, 157))
-    ) {
-        TopAppBar(
-            title = {},
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Content container with centered alignment and full width
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)  // fill remaining height
-                .padding(horizontal = 0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(modifier = Modifier.height(100.dp))
-            Text(
-                text = "Happy Green",
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(50.dp))
-
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.8f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(0.8f)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-
-//Riguardare Quando Fare API request
-//                    val apiService = RetrofitInstance.api
-//                    val apiService = RetrofitInstance.create("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3NDk4OTExLCJpYXQiOjE3NDc0OTg2MTEsImp0aSI6IjEyMjQ2NGE4NzExMTQzYTRiNDllNGFmMjA3MTNmYzMwIiwidXNlcl9pZCI6MX0.s9kHrkQ0qLTlKrZJ64TYyrLuuMFhKVPOBe0aJnkdcyw")
-//                    coroutineScope.launch {
-//                        val nome = getUsernameById(apiService, 1)
-//                    }
-                },
-                shape = RoundedCornerShape(5.dp),
-                modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank() && password.isNotBlank()
-            ) {
-                Text("Login")
-            }
-        }
-    }
-}
-
-//Pagina Per effettuare la registrazione
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RegisterPage(navController: NavHostController) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(79, 149, 157))
-    ) {
-        TopAppBar(
-            title = {},
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(modifier = Modifier.height(100.dp))
-
-            Text(
-                text = "Happy Green",
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(50.dp))
-
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
-                )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { /* Handle registration */ },
-                shape = RoundedCornerShape(5.dp),
-                modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank() && password.isNotBlank()
-            ) {
-                Text("Register")
-            }
-        }
-    }
-}
 
 //TODO
 //@Composable
