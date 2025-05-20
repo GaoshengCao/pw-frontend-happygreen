@@ -87,6 +87,10 @@ import androidx.security.crypto.MasterKey
 import com.example.frontend_happygreen.ui.theme.FrontendhappygreenTheme
 import kotlinx.coroutines.launch
 
+object UserInfo{
+    var utente : User? = null
+}
+
 object SecureStorage {
 
     private fun getSharedPrefs(context: Context): SharedPreferences {
@@ -147,7 +151,7 @@ class MainActivity : ComponentActivity() {
                         composable("login"){ LoginPage((navController)) } // 2
                         composable("register"){ RegisterPage((navController))} // 3
                         composable("home") { HomePage(navController) } // 4
-//                        composable("createGroup"){ CreateGroupPage((navController))} // 5
+                        composable("createGroup"){ CreateGroupPage((navController))} // 5
 //                        composable("enterGroup"){ EnterGroupPage((navController))} // 6
 //                        composable("groupmap"){ GroupMapPage((navController))} // 8
                         composable("group/{name}"){ backStackEntry ->
@@ -316,7 +320,6 @@ fun LoginPage(navController: NavHostController) {
     val coroutineScope = rememberCoroutineScope()
     //Salvataggio Token
     val context = LocalContext.current.applicationContext
-    val token = remember { mutableStateOf<String?>(null) }
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -382,10 +385,9 @@ fun LoginPage(navController: NavHostController) {
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val apiService = RetrofitInstance.api.getToken(LoginRequest(username, password)).access
-
-//                        val token = loginUser(apiService, username,password)
-                        SecureStorage.saveToken(context, apiService)
+                        val api = RetrofitInstance.api
+                        val apiToken = loginUser(api, username, password)
+                        SecureStorage.saveToken(context, apiToken)
                         navController.navigate("home")
                     }
                 },
@@ -484,13 +486,16 @@ fun RegisterPage(navController: NavHostController) {
                     coroutineScope.launch {
                         //Crea L'utente
                         val apiService = RetrofitInstance.api
-                        val result = registerUser(apiService,username,password) //TODO CONTROLLARE COSA RESTITUISCE
-                        if (result != "Registered user: $username")
-                        {
-                            SecureStorage.saveToken(context, loginUser(apiService, username,password))
+                        val result = registerUser(apiService, username, password)
+
+                        val firstWord = result?.split(" ")?.firstOrNull()
+
+                        if (firstWord == "Registered") {
+                            // Success
+                            SecureStorage.saveToken(context, loginUser(apiService, username, password))
                             navController.navigate("home")
-                        }else{
-                            risultato = result
+                        } else {
+                            risultato = "Registrazione Fallita, Nome Utente Già Esistente"
                         }
 
                     }
@@ -575,6 +580,98 @@ fun ElementGroup(navController: NavHostController, name : String){
                     imageVector = Icons.Default.ArrowForward,
                     contentDescription = "Go to group"
                 )
+            }
+        }
+    }
+}
+
+//
+// 5 (Create Group)
+//
+//TODO
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateGroupPage(navController: NavHostController) {
+    //  Per API
+    val coroutineScope = rememberCoroutineScope()
+    //Salvataggio Token
+    val context = LocalContext.current.applicationContext
+
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Content container with centered alignment and full width
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)  // fill remaining height
+                .padding(horizontal = 0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+            Text(
+                text = "Happy Green",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val api = RetrofitInstance.api
+                        val apiToken = loginUser(api, username, password)
+                        SecureStorage.saveToken(context, apiToken)
+                        navController.navigate("home")
+                    }
+                },
+                shape = RoundedCornerShape(5.dp),
+                modifier = Modifier.fillMaxWidth(0.4f),
+                enabled = username.isNotBlank() && password.isNotBlank()
+            ) {
+                Text("Login")
             }
         }
     }
@@ -678,7 +775,6 @@ fun ElementPost(navController: NavHostController, name: String) {
         }
     }
 }
-
 
 //TODO NAVIGAZIONE ALTRE PAGINE
 @OptIn(ExperimentalMaterial3Api::class)
@@ -800,17 +896,6 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
 }
 
 
-
-
-//TODO
-//@Composable
-//fun CreateGroupPage(navController: NavHostController) {
-//
-//    //TextBox Nome Gruppo
-//    //Bottone Invia
-//
-//
-//}
 //TODO
 //@Composable
 //fun EnterGroupPage(navController: NavHostController) {

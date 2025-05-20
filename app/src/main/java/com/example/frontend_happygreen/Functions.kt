@@ -12,9 +12,6 @@ suspend fun loginUser(api: ApiService, username: String, password: String): Stri
 }
 
 suspend fun registerUser(api: ApiService, username: String, password: String): String {
-    if (username.isBlank() || password.isBlank()) {
-        return "Username and password cannot be empty"
-    }
 
     val request = NewUser(username, password)
     return try {
