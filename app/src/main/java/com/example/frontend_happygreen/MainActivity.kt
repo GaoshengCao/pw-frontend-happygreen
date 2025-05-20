@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +55,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.traceEventEnd
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -120,13 +122,15 @@ object SecureStorage {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+//        enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             FrontendhappygreenTheme {
                 val navController = rememberNavController()
                 val context = LocalContext.current.applicationContext
                 var page = "home"
+                val security = SecureStorage.getToken(context)
+
                 if (SecureStorage.getToken(context) == null){
                     page = "first"
                 }
@@ -136,7 +140,8 @@ class MainActivity : ComponentActivity() {
                 ){
                     NavHost(
                         navController = navController,
-                        startDestination = page
+                        startDestination = page,
+                        modifier = Modifier.navigationBarsPadding()
                     ) {
                         composable("first"){ FirstPage((navController))} // 1
                         composable("login"){ LoginPage((navController)) } // 2
@@ -376,9 +381,12 @@ fun LoginPage(navController: NavHostController) {
 
             Button(
                 onClick = {
-                    val apiService = RetrofitInstance.api
                     coroutineScope.launch {
-                        SecureStorage.saveToken(context, loginUser(apiService, username,password))
+                        val apiService = RetrofitInstance.api.getToken(LoginRequest(username, password)).access
+
+//                        val token = loginUser(apiService, username,password)
+                        SecureStorage.saveToken(context, apiService)
+                        navController.navigate("home")
                     }
                 },
                 shape = RoundedCornerShape(5.dp),
@@ -736,11 +744,34 @@ fun CameraPage(navController: NavHostController) {
 //TODO
 @Composable
 fun UserPage(navController: NavHostController) {
+    val context = LocalContext.current.applicationContext
+    //Variabili Per Testare
+    val groups = listOf("Family", "Work", "Friends", "Study")
+
     Scaffold(
-        topBar = { HeaderBar(navController,"Happy Green") },
+        topBar = { HeaderBar(navController, "HappyGreen") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        CenteredContent(paddingValues, "User")
+        // Main content inside the Scaffold, using Column to organize UI elements vertically
+        Column(
+            modifier = Modifier
+                .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .verticalScroll(rememberScrollState())
+                .fillMaxSize(), // Make sure the column takes up the available space
+
+            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
+            verticalArrangement = Arrangement.Top // Center contents vertically
+
+        ) {
+            Button(onClick = {
+                SecureStorage.clearToken(context)
+                navController.navigate("first")
+            }
+
+            ) {
+                Text("Logout")
+            }
+        }
     }
 }
 

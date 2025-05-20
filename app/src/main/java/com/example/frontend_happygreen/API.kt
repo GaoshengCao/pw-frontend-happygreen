@@ -17,22 +17,22 @@ interface ApiService {
     suspend fun getUser(@Path("id") id: Int): User
 
     @GET("groups/{id}/")
-    fun getGroup(@Path("id") id: Int): Group
+    suspend fun getGroup(@Path("id") id: Int): Group
 
     @GET("posts/{id}/")
-    fun getPost(@Path("id") id: Int): Post
+    suspend fun getPost(@Path("id") id: Int): Post
 
     @GET("quizzes/{id}/")
-    fun getQuiz(@Path("id") id: Int): Quiz
+    suspend fun getQuiz(@Path("id") id: Int): Quiz
 
     @POST("token/")
-    fun getToken(@Body tokenRequest: LoginRequest): LoginResponse
+    suspend fun getToken(@Body tokenRequest: LoginRequest): LoginResponse
 
-    @POST("users/")
-    fun register(@Body loginRequest: LoginRequest) : Call<LoginRequest>
+    @POST("token/")
+    suspend fun register(@Body loginRequest: LoginRequest) : Call<LoginRequest>
 
     @POST("token/refresh/")
-    fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): LoginResponse
+    suspend fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): LoginResponse
 
 }
 
@@ -50,6 +50,7 @@ data class LoginResponse(
 data class User(
     @SerializedName("id") val id: Int,
     @SerializedName("username") val username: String?,
+    @SerializedName("password") val password: String?,
     @SerializedName("profile_pic") val profile_pic: String?,
     @SerializedName("points") val points: Int,
     @SerializedName("level") val level: Int,
@@ -144,7 +145,9 @@ data class WasteClassification(
 
 object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
-    private const val BASE_URL = "https://3cbd-45-13-91-6.ngrok-free.app/"
+
+
+    private const val BASE_URL = "https://29c2-151-49-216-147.ngrok-free.app/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()

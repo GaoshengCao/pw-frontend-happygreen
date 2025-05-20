@@ -4,7 +4,7 @@ import android.util.Log
 
 suspend fun loginUser(api: ApiService, username: String, password: String): String? {
     return try {
-        val response = RetrofitInstance.api.getToken(LoginRequest(username, password))
+        val response = api.getToken(LoginRequest(username, password))
         response.access
     } catch (e: Exception) {
         null
