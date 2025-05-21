@@ -120,5 +120,3 @@ suspend fun getGroupsByUserID(api: ApiService, userId: Int): List<Group> {
 
     return resultGroups
 }
-
-suspend fun createPost(api: ApiService,post: Post)
