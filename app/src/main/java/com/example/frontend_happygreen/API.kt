@@ -28,10 +28,10 @@ interface ApiService {
     @POST("groups/")
     suspend fun createGroup(@Body newGroup: NewGroup): retrofit2.Response<NewGroup>
 
-    @GET("membership/")
-    suspend fun getMembership() : List<Group>
+    @GET("memberships/")
+    suspend fun getMembership() : List<Membership>
 
-    @POST("membership/")
+    @POST("memberships/")
     suspend fun joinGroup(@Body newMembership: newMembership): retrofit2.Response<newMembership>
 
     @GET("posts/")

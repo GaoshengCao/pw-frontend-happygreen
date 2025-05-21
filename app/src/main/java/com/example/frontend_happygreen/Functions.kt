@@ -44,6 +44,11 @@ suspend fun createGroup(api: ApiService, creatorID: Int, groupName: String) : St
         val response = api.createGroup(newGroup)
         if (response.isSuccessful) {
             val group = response.body()
+
+            val membership = newMembership(creatorID, getIDGroup(api,groupName), "admin")
+            val result = api.joinGroup(membership)
+
+
             "Created Group: ${group?.name}"
         } else {
             "failed creation: ${response.errorBody()?.string()}"
@@ -52,6 +57,7 @@ suspend fun createGroup(api: ApiService, creatorID: Int, groupName: String) : St
         "Error: ${e.message}"
     }
 }
+
 
 suspend fun getPost(api: ApiService, groupID: Int): List<Post>? {
     return try {
@@ -76,7 +82,7 @@ suspend fun getIDGroup(api: ApiService,groupName:String): Int{
 }
 
 suspend fun joinGroup(api: ApiService, user: Int, groupID: Int) : String{
-    val membership = newMembership(user, groupID, "Member")
+    val membership = newMembership(user, groupID, "member")
     return try {
         val response = api.joinGroup(membership)
         if (response.isSuccessful) {
@@ -88,4 +94,29 @@ suspend fun joinGroup(api: ApiService, user: Int, groupID: Int) : String{
     }catch (e: Exception) {
         "Error: ${e.message}"
     }
+}
+
+suspend fun getGroupsByUserID(api: ApiService, userId: Int): List<Group> {
+    val groupIds = mutableListOf<Int>()
+    val resultGroups = mutableListOf<Group>()
+
+    try {
+        val memberships = api.getMembership()
+        for (membership in memberships) {
+            if (membership.user == userId) {
+                groupIds.add(membership.group)
+            }
+        }
+
+        val allGroups = api.getAllGroups()
+        for (group in allGroups) {
+            if (group.id in groupIds) {
+                resultGroups.add(group)
+            }
+        }
+    } catch (e: Exception) {
+        println("Error: ${e.message}")
+    }
+
+    return resultGroups
 }
