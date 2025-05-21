@@ -28,10 +28,10 @@ interface ApiService {
     @POST("groups/")
     suspend fun createGroup(@Body newGroup: NewGroup): retrofit2.Response<NewGroup>
 
-    @GET("membership/")
-    suspend fun getMembership() : List<Group>
+    @GET("memberships/")
+    suspend fun getMembership() : List<Membership>
 
-    @POST("membership/")
+    @POST("memberships/")
     suspend fun joinGroup(@Body newMembership: newMembership): retrofit2.Response<newMembership>
 
     @GET("posts/")
@@ -177,7 +177,7 @@ object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
 
 
-    private const val BASE_URL = "https://a107-151-49-216-147.ngrok-free.app/"
+    private const val BASE_URL = "https://910f-151-49-200-179.ngrok-free.app/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()
