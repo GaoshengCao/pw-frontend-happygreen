@@ -1,5 +1,6 @@
 package com.example.frontend_happygreen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.icu.text.CaseMap.Title
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -51,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -695,14 +698,17 @@ fun CreateGroupPage(navController: NavHostController) {
 //
 // 7 (Group Page)
 //
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun GroupPage(navController: NavHostController, nome : String) {
     //Variabile per testare
     val coroutineScope = rememberCoroutineScope()
-    coroutineScope.launch {
+    var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
+
+    LaunchedEffect(nome) {
         val api = RetrofitInstance.api
-        val id = getIDGroup(api,nome)
-        val posts = getPost(api,id)
+        val id = getIDGroup(api, nome)
+        posts = getPost(api, id)
     }
 
 
@@ -722,8 +728,10 @@ fun GroupPage(navController: NavHostController, nome : String) {
 
         ) {
 
-            posts.forEach { post ->
-                ElementPost(navController = navController, name = post)
+            LazyColumn {
+                items(posts) { post ->
+                    Text(text = post.title)
+                }
             }
         }
     }

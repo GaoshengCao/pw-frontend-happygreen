@@ -53,7 +53,7 @@ suspend fun createGroup(api: ApiService, creatorID: Int, groupName: String) : St
     }
 }
 
-suspend fun getPost(api: ApiService, groupID: Int): List<Post>? {
+suspend fun getPost(api: ApiService, groupID: Int): List<Post> {
     return try {
         val response = api.getPosts() // Assuming this returns List<Post>
         val filteredPosts = response.filter { it.group == groupID }
