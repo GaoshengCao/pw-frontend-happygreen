@@ -696,6 +696,98 @@ fun CreateGroupPage(navController: NavHostController) {
 }
 
 //
+// 6 (Join Group)
+//
+//TODO
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JoinGroupPage(navController: NavHostController) {
+    //  Per API
+    val coroutineScope = rememberCoroutineScope()
+    //Salvataggio Token
+    val context = LocalContext.current.applicationContext
+
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    var risultato by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Content container with centered alignment and full width
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)  // fill remaining height
+                .padding(horizontal = 0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+            Text(
+                text = "Happy Green",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+
+                        val api = RetrofitInstance.api
+                        val id = SecureStorage.getUser(context)
+                        val responce = joinGroup(api,id,username.toInt())
+
+                        val firstWord = responce.split(" ")?.firstOrNull()
+
+                        if (firstWord == "Joined"){
+                            navController.navigate("home")
+                        }else{
+                            risultato = responce
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(5.dp),
+                modifier = Modifier.fillMaxWidth(0.4f),
+                enabled = username.isNotBlank() && password.isNotBlank()
+            ) {
+                Text("Join")
+            }
+            Text(risultato)
+        }
+    }
+}
+
+//
 // 7 (Group Page)
 //
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -703,7 +795,7 @@ fun CreateGroupPage(navController: NavHostController) {
 fun GroupPage(navController: NavHostController, nome : String) {
     //Variabile per testare
     val coroutineScope = rememberCoroutineScope()
-    var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
+    var posts by remember { mutableStateOf<List<Post>?>(emptyList()) }
 
     LaunchedEffect(nome) {
         val api = RetrofitInstance.api
@@ -728,11 +820,11 @@ fun GroupPage(navController: NavHostController, nome : String) {
 
         ) {
 
-            LazyColumn {
-                items(posts) { post ->
-                    Text(text = post.title)
-                }
-            }
+//            LazyColumn {
+//                items(posts) { post ->
+//                    Text(text = post.title)
+//                }
+//            }
         }
     }
 }

@@ -53,7 +53,7 @@ suspend fun createGroup(api: ApiService, creatorID: Int, groupName: String) : St
     }
 }
 
-suspend fun getPost(api: ApiService, groupID: Int): List<Post> {
+suspend fun getPost(api: ApiService, groupID: Int): List<Post>? {
     return try {
         val response = api.getPosts() // Assuming this returns List<Post>
         val filteredPosts = response.filter { it.group == groupID }
@@ -65,12 +65,27 @@ suspend fun getPost(api: ApiService, groupID: Int): List<Post> {
 }
 
 suspend fun getIDGroup(api: ApiService,groupName:String): Int{
-    val groups = api.getAllUsers()
+    val groups = api.getAllGroups()
 
     for (group in groups) {
-        if (group.username == groupName){
+        if (group.name == groupName){
             return group.id
         }
     }
     return 0
+}
+
+suspend fun joinGroup(api: ApiService, user: Int, groupID: Int) : String{
+    val membership = newMembership(user, groupID, "Member")
+    return try {
+        val response = api.joinGroup(membership)
+        if (response.isSuccessful) {
+            val member = response.body()
+            "Joined Group: ${member?.group}"
+        } else {
+            "failed joined: ${response.errorBody()?.string()}"
+        }
+    }catch (e: Exception) {
+        "Error: ${e.message}"
+    }
 }

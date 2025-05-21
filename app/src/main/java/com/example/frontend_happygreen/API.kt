@@ -28,6 +28,12 @@ interface ApiService {
     @POST("groups/")
     suspend fun createGroup(@Body newGroup: NewGroup): retrofit2.Response<NewGroup>
 
+    @GET("membership/")
+    suspend fun getMembership() : List<Group>
+
+    @POST("membership/")
+    suspend fun joinGroup(@Body newMembership: newMembership): retrofit2.Response<newMembership>
+
     @GET("posts/")
     suspend fun getPosts(): List<Post>
 
@@ -87,6 +93,11 @@ data class Membership(
     @SerializedName("group") val group: Int,
     @SerializedName("role") val role: String?,
     @SerializedName("joined_at") val joined_at: String?
+)
+data class newMembership(
+    @SerializedName("user") val user: Int,
+    @SerializedName("group") val group: Int,
+    @SerializedName("role") val role: String?
 )
 data class Post(
     @SerializedName("id") val id: Int,
