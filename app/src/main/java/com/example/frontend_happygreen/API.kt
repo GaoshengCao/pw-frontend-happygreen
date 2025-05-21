@@ -177,7 +177,7 @@ object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
 
 
-    private const val BASE_URL = "https://a107-151-49-216-147.ngrok-free.app/"
+    private const val BASE_URL = "https://910f-151-49-200-179.ngrok-free.app/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()
