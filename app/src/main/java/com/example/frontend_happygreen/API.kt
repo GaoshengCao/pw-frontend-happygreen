@@ -13,6 +13,9 @@ import retrofit2.http.Path
 
 
 interface ApiService {
+    @GET("users/")
+    suspend fun getAllUsers() : List<User>
+
     @GET("users/{id}/")
     suspend fun getUser(@Path("id") id: Int): User
 
@@ -150,7 +153,7 @@ object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
 
 
-    private const val BASE_URL = "https://29c2-151-49-216-147.ngrok-free.app/"
+    private const val BASE_URL = "https://a107-151-49-216-147.ngrok-free.app/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()

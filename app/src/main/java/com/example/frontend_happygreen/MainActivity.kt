@@ -113,13 +113,25 @@ object SecureStorage {
             .putString("auth_token", token)
             .apply()
     }
+    fun saveUser(context: Context, id : Int) {
+        getSharedPrefs(context)
+            .edit()
+            .putInt("User_ID", id)
+            .apply()
+    }
 
     fun getToken(context: Context): String? {
         return getSharedPrefs(context).getString("auth_token", null)
     }
+    fun getUser(context: Context): Int {
+        return getSharedPrefs(context).getInt("User_ID", 0)
+    }
 
     fun clearToken(context: Context) {
         getSharedPrefs(context).edit().remove("auth_token").apply()
+    }
+    fun clearUser(context: Context) {
+        getSharedPrefs(context).edit().remove("User_ID").apply()
     }
 }
 
@@ -388,6 +400,8 @@ fun LoginPage(navController: NavHostController) {
                         val api = RetrofitInstance.api
                         val apiToken = loginUser(api, username, password)
                         SecureStorage.saveToken(context, apiToken)
+                        val id = getId(api,username)
+                        SecureStorage.saveUser(context,id)
                         navController.navigate("home")
                     }
                 },

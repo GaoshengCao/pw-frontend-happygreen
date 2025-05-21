@@ -26,3 +26,14 @@ suspend fun registerUser(api: ApiService, username: String, password: String): S
         "Error: ${e.message}"
     }
 }
+
+suspend fun getId(api: ApiService, username: String): Int {
+    val users = api.getAllUsers()
+
+    for (user in users) {
+        if (user.username == username) {
+            return user.id
+        }
+    }
+    return 0
+}
