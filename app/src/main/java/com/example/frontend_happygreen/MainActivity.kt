@@ -158,11 +158,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val context = LocalContext.current.applicationContext
                 var page = "splash_screen"
-                val security = SecureStorage.getToken(context)
 
-                if (SecureStorage.getToken(context) == null){
-                    page = "splash_screen"
-                }
 
 
                 Surface (modifier = Modifier.fillMaxSize()
@@ -178,12 +174,14 @@ class MainActivity : ComponentActivity() {
                         composable("register"){ RegisterPage((navController))} // 3
                         composable("home") { HomePage(navController) } // 4
                         composable("createGroup"){ CreateGroupPage((navController))} // 5
-//                        composable("enterGroup"){ EnterGroupPage((navController))} // 6
+                        composable("enterGroup"){ JoinGroupPage((navController))} // 6
 //                        composable("groupmap"){ GroupMapPage((navController))} // 8
                         composable("group/{name}"){ backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
                         GroupPage(navController,name)} // 7
-//                        composable("addPost"){ AddPostPage((navController))} // 9
+                       composable("addPost/{name}"){ backStackEntry ->
+                           val name = backStackEntry.arguments?.getString("name") ?: "???"
+                           GroupPage(navController,name)} // 9
 //                        composable("comment"){ CommentPage((navController))} // 10
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
@@ -201,6 +199,7 @@ fun SplashScreen(navController: NavController) {
     val scale = remember {
         androidx.compose.animation.core.Animatable(0f)
     }
+    val context = LocalContext.current.applicationContext
 
     // AnimationEffect
     LaunchedEffect(key1 = true) {
@@ -213,7 +212,12 @@ fun SplashScreen(navController: NavController) {
                 })
         )
         delay(3000L)
-        navController.navigate("first")
+        if (SecureStorage.getToken(context) == null){
+            navController.navigate("first")
+        }else{
+            navController.navigate("home")
+        }
+
     }
 
     // Image
@@ -578,11 +582,14 @@ fun RegisterPage(navController: NavHostController) {
 fun HomePage(navController: NavHostController) {
     //Variabili Per Testare
     val coroutineScope = rememberCoroutineScope()
-    var groups by remember { mutableStateOf<List<Post>?>(emptyList()) }
+    var groups by remember { mutableStateOf<List<Group>?>(emptyList()) }
+    val context = LocalContext.current.applicationContext
 
-    coroutineScope.launch() {
+    val userId = SecureStorage.getUser(context)
+
+    LaunchedEffect(userId) {
         val api = RetrofitInstance.api
-
+        groups = getGroupsByUserID(api, userId)
     }
 
     Scaffold(
@@ -592,19 +599,26 @@ fun HomePage(navController: NavHostController) {
         // Main content inside the Scaffold, using Column to organize UI elements vertically
         Column(
             modifier = Modifier
-                .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .fillMaxSize(), // Make sure the column takes up the available space
-
-            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
-            verticalArrangement = Arrangement.Top // Center contents vertically
-
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
-
-            groups.forEach { group ->
-                ElementGroup(navController = navController, name = group)
+            // List of groups with dividers
+            groups?.forEachIndexed { index, group ->
+                ElementGroup(navController, group)
+                if (index != groups?.lastIndex) {
+                    Divider(
+                        color = Color.LightGray,
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .fillMaxWidth()
+                    )
+                }
             }
-            // Add Navigation Buttons with vertical spacing between them
+
             Spacer(modifier = Modifier.height(16.dp))
             NavigationButton("Crea Gruppo", "createGroup", navController)
             Spacer(modifier = Modifier.height(4.dp))
@@ -614,13 +628,13 @@ fun HomePage(navController: NavHostController) {
 }
 
 @Composable
-fun ElementGroup(navController: NavHostController, name : String){
+fun ElementGroup(navController: NavHostController, group: Group){
     Box(modifier = Modifier
         .fillMaxWidth()
         .padding(8.dp)
         .background(Color.LightGray)
         .clickable {
-        navController.navigate("group/$name");
+        navController.navigate("group/${group.name}");
     },
     ){
         Row(
@@ -629,7 +643,7 @@ fun ElementGroup(navController: NavHostController, name : String){
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
-                text = name,
+                text = group.name,
                 style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
 
                 modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
@@ -642,7 +656,6 @@ fun ElementGroup(navController: NavHostController, name : String){
 //
 // 5 (Create Group)
 //
-//TODO
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateGroupPage(navController: NavHostController) {
@@ -650,10 +663,7 @@ fun CreateGroupPage(navController: NavHostController) {
     val coroutineScope = rememberCoroutineScope()
     //Salvataggio Token
     val context = LocalContext.current.applicationContext
-
     var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
     var risultato by remember { mutableStateOf("") }
 
     Column(
@@ -711,6 +721,7 @@ fun CreateGroupPage(navController: NavHostController) {
                         val id = SecureStorage.getUser(context)
                         val responce = createGroup(api,id,username)
 
+
                         val firstWord = responce.split(" ")?.firstOrNull()
 
                         if (firstWord == "Created"){
@@ -734,7 +745,6 @@ fun CreateGroupPage(navController: NavHostController) {
 //
 // 6 (Join Group)
 //
-//TODO
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JoinGroupPage(navController: NavHostController) {
@@ -744,7 +754,6 @@ fun JoinGroupPage(navController: NavHostController) {
     val context = LocalContext.current.applicationContext
 
     var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
 
     var risultato by remember { mutableStateOf("") }
 
@@ -788,7 +797,7 @@ fun JoinGroupPage(navController: NavHostController) {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text("ID Gruppo") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
@@ -814,7 +823,7 @@ fun JoinGroupPage(navController: NavHostController) {
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank() && password.isNotBlank()
+                enabled = username.isNotBlank()
             ) {
                 Text("Join")
             }
@@ -864,6 +873,7 @@ fun GroupPage(navController: NavHostController, nome : String) {
         }
     }
 }
+
 //TODO
 @Composable
 fun ElementPost(navController: NavHostController, name: String) {
@@ -931,6 +941,13 @@ fun ElementPost(navController: NavHostController, name: String) {
             }
         }
     }
+}
+
+//
+// 9(Create Post)
+//
+@Composable
+fun AddPostPage(navController: NavHostController, groupName:String) {
 }
 
 //TODO NAVIGAZIONE ALTRE PAGINE
@@ -1064,14 +1081,7 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
 //
 
 //
-//@Composable
-//fun AddPostPage(navController: NavHostController) {
-//
-//    //TextBox Descrizione Post
-//    //Carica Immagine
-//    //Inserimento Luogo
-//
-//}
+
 //
 //@Composable
 //fun CommentPage(navController: NavHostController) {
