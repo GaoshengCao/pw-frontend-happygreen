@@ -1,6 +1,16 @@
 package com.example.frontend_happygreen
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
+import com.google.android.gms.common.api.Response
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import java.io.InputStream
 
 suspend fun loginUser(api: ApiService, username: String, password: String): String? {
     return try {
@@ -121,4 +131,45 @@ suspend fun getGroupsByUserID(api: ApiService, userId: Int): List<Group> {
     return resultGroups
 }
 
-suspend fun createPost(api: ApiService,post: Post)
+suspend fun createPost(api: ApiService, context: Context, newPostData: PostData): String {
+    return try {
+        // Helper to convert nullable Int to RequestBody or null
+        fun intToRequestBody(value: Int?): RequestBody? =
+            value?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        val groupPart = intToRequestBody(newPostData.groupId)
+        val authorPart = intToRequestBody(newPostData.authorId)
+        val textPart = newPostData.text.toRequestBody("text/plain".toMediaTypeOrNull())
+        val latPart = newPostData.locationLat?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
+        val lngPart = newPostData.locationLng?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        // Convert Uri to MultipartBody.Part
+        val contentResolver = context.contentResolver
+        val inputStream: InputStream? = contentResolver.openInputStream(newPostData.imageUri)
+        if (inputStream == null) return "Failed to read image from Uri"
+
+        val tempFile = File.createTempFile("upload", ".jpg", context.cacheDir)
+        tempFile.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+
+        val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+        val imagePart = MultipartBody.Part.createFormData("image", tempFile.name, requestFile)
+
+        // Call API
+        val response = api.createPost(groupPart, authorPart, textPart, latPart, lngPart, imagePart)
+
+        // Clean up temp file
+        tempFile.delete()
+
+        if (response.isSuccessful) {
+            "Post created successfully! ID: ${response.body()?.postId ?: "unknown"}"
+        } else {
+            "Post creation failed: ${response.errorBody()?.string()}"
+        }
+    } catch (e: Exception) {
+        "Error creating post: ${e.message}"
+    }
+}
+
+

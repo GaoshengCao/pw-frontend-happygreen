@@ -1,14 +1,19 @@
 package com.example.frontend_happygreen
+import android.net.Uri
 import android.util.Log
 import com.google.gson.annotations.SerializedName
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody
 import okhttp3.Response
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 
 
@@ -40,8 +45,18 @@ interface ApiService {
     @GET("posts/{id}/")
     suspend fun getPost(@Path("id") id: Int): Post
 
-    @POST("posts/")
-    suspend fun createPost(@Body newPost: NewPost) : retrofit2.Response<newMembership>
+    @Multipart
+    @POST("posts/")  // adjust path if needed
+    suspend fun createPost(
+        @Part("group") group: RequestBody?,
+        @Part("author") author: RequestBody?,
+        @Part("text") text: RequestBody,
+        @Part("location_lat") locationLat: RequestBody?,
+        @Part("location_lng") locationLng: RequestBody?,
+        @Part image: MultipartBody.Part
+    ): retrofit2.Response<CreatePostResponse>
+
+
 
     @GET("quizzes/{id}/")
     suspend fun getQuiz(@Path("id") id: Int): Quiz
@@ -58,6 +73,13 @@ interface ApiService {
 
 
 }
+
+data class CreatePostResponse(
+    val success: Boolean,
+    val message: String,
+    val postId: Int
+)
+
 
 data class LoginRequest(
     @SerializedName("username") val username: String?,
@@ -114,14 +136,16 @@ data class Post(
     @SerializedName("location_lng") val location_lng: Double?,
     @SerializedName("created_at") val created_at: String?
 )
-data class NewPost(
-    @SerializedName("group") val group: Int,
-    @SerializedName("author") val author: Int,
-    @SerializedName("text") val text: String?,
-//    @SerializedName("image") val image: File,
-    @SerializedName("location_lat") val location_lat: Double?,
-    @SerializedName("location_lng") val location_lng: Double?,
+data class PostData(
+    val groupId: Int?,
+    val authorId: Int?,
+    val text: String,
+    val imageUri: Uri,
+    val locationLat: Double?,
+    val locationLng: Double?
+
 )
+
 data class Comment(
     @SerializedName("id") val id: Int,
     @SerializedName("post") val post: Int,

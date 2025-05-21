@@ -1120,10 +1120,30 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
 
         Button(
             onClick = {
+
                 coroutineScope.launch {
-                    // TODO: implement API upload with imageUri, description, and location
-                    resultText = "Post creato con descrizione: $description\nCoordinate: ${location?.latitude}, ${location?.longitude}"
+                    val api = RetrofitInstance.api
+
+                    if (imageUri != null && location != null && description.isNotBlank()) {
+                        val postData = PostData(
+                            groupId = getIDGroup(api,groupName),       // pass actual group ID if available
+                            authorId = SecureStorage.getUser(context),      // pass actual user ID if available
+                            text = description,
+                            locationLat = location?.latitude,
+                            locationLng = location?.longitude,
+                            imageUri = imageUri!!
+                        )
+
+                        resultText = createPost(api, context, postData)
+
+
+                    } else {
+                        resultText = "Seleziona immagine, posizione e inserisci descrizione."
+                    }
+
+
                 }
+
             },
             shape = RoundedCornerShape(5.dp),
             modifier = Modifier
@@ -1162,7 +1182,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
             .clickable { /*TODO NAVIGATE (MapPage)*/ },
         actions = {
             IconButton(onClick = {
-                navController.navigate("addPost/{$title}")
+                navController.navigate("addPost/${title}")
             }) {
                 Icon(
                     imageVector = Icons.Filled.AddCircle,
