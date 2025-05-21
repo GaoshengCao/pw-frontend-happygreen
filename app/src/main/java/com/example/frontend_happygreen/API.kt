@@ -40,6 +40,9 @@ interface ApiService {
     @GET("posts/{id}/")
     suspend fun getPost(@Path("id") id: Int): Post
 
+    @POST("posts/")
+    suspend fun createPost(@Body newPost: NewPost) : retrofit2.Response<newMembership>
+
     @GET("quizzes/{id}/")
     suspend fun getQuiz(@Path("id") id: Int): Quiz
 
@@ -51,6 +54,8 @@ interface ApiService {
 
     @POST("token/refresh/")
     suspend fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): LoginResponse
+
+
 
 }
 
@@ -108,6 +113,14 @@ data class Post(
     @SerializedName("location_lat") val location_lat: Double?,
     @SerializedName("location_lng") val location_lng: Double?,
     @SerializedName("created_at") val created_at: String?
+)
+data class NewPost(
+    @SerializedName("group") val group: Int,
+    @SerializedName("author") val author: Int,
+    @SerializedName("text") val text: String?,
+//    @SerializedName("image") val image: File,
+    @SerializedName("location_lat") val location_lat: Double?,
+    @SerializedName("location_lng") val location_lng: Double?,
 )
 data class Comment(
     @SerializedName("id") val id: Int,

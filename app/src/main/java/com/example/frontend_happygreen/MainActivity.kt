@@ -4,13 +4,18 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.icu.text.CaseMap.Title
+import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.view.WindowInsets
 import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
@@ -82,6 +87,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -92,7 +98,19 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import coil.compose.rememberAsyncImagePainter
 import com.example.frontend_happygreen.ui.theme.FrontendhappygreenTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.graphics.Color as AndroidColor
@@ -181,7 +199,7 @@ class MainActivity : ComponentActivity() {
                         GroupPage(navController,name)} // 7
                        composable("addPost/{name}"){ backStackEntry ->
                            val name = backStackEntry.arguments?.getString("name") ?: "???"
-                           GroupPage(navController,name)} // 9
+                           AddPostPage(navController,name)} // 9
 //                        composable("comment"){ CommentPage((navController))} // 10
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
@@ -593,7 +611,7 @@ fun HomePage(navController: NavHostController) {
     }
 
     Scaffold(
-        topBar = { HeaderBar(navController, "HappyGreen") },
+        topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         // Main content inside the Scaffold, using Column to organize UI elements vertically
@@ -613,7 +631,7 @@ fun HomePage(navController: NavHostController) {
                         color = Color.LightGray,
                         thickness = 1.dp,
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
                             .fillMaxWidth()
                     )
                 }
@@ -631,8 +649,6 @@ fun HomePage(navController: NavHostController) {
 fun ElementGroup(navController: NavHostController, group: Group){
     Box(modifier = Modifier
         .fillMaxWidth()
-        .padding(8.dp)
-        .background(Color.LightGray)
         .clickable {
         navController.navigate("group/${group.name}");
     },
@@ -946,9 +962,187 @@ fun ElementPost(navController: NavHostController, name: String) {
 //
 // 9(Create Post)
 //
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun AddPostPage(navController: NavHostController, groupName:String) {
+fun AddPostPage(navController: NavHostController, groupName: String) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    var description by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var location by remember { mutableStateOf<LatLng?>(null) }
+    var resultText by remember { mutableStateOf("") }
+
+    // Location permission state
+    val permissionState = rememberPermissionState(
+        android.Manifest.permission.ACCESS_FINE_LOCATION
+    )
+
+    // Image picker launcher
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        imageUri = uri
+    }
+
+    // Fused location client
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    // Get user location if permission is granted
+    LaunchedEffect(permissionState.status.isGranted) {
+        if (permissionState.status.isGranted) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { locationResult ->
+                    locationResult?.let {
+                        location = LatLng(it.latitude, it.longitude)
+                    }
+                }
+            }
+        } else {
+            permissionState.launchPermissionRequest()
+        }
+    }
+
+    // Camera position state, updated with selected location or default to Rome
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(location ?: LatLng(41.9028, 12.4964), 6f)
+    }
+
+    // When location changes, move camera to new position
+    LaunchedEffect(location) {
+        location?.let {
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 15f))
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+            .verticalScroll(rememberScrollState())
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Aggiungi Post a $groupName",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Descrizione") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            singleLine = false,
+            maxLines = 3
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = { launcher.launch("image/*") },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Seleziona Immagine")
+        }
+
+        imageUri?.let {
+            Image(
+                painter = rememberAsyncImagePainter(it),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .height(200.dp)
+                    .fillMaxWidth(),
+                contentScale = ContentScale.Fit
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        location?.let {
+            Text(
+                text = "Posizione selezionata: ${it.latitude}, ${it.longitude}",
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+
+        Text(
+            text = "Tocca la mappa per selezionare un'altra posizione:",
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        // --- Google Map Composable ---
+        GoogleMap(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(horizontal = 16.dp),
+            cameraPositionState = cameraPositionState,
+            onMapClick = { latLng ->
+                location = latLng
+            }
+        ) {
+            location?.let {
+                Marker(
+                    state = MarkerState(position = it),
+                    title = "Posizione selezionata"
+                )
+            }
+        }
+        // --- end map ---
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    // TODO: implement API upload with imageUri, description, and location
+                    resultText = "Post creato con descrizione: $description\nCoordinate: ${location?.latitude}, ${location?.longitude}"
+                }
+            },
+            shape = RoundedCornerShape(5.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .align(Alignment.CenterHorizontally),
+            enabled = description.isNotBlank() && location != null
+        ) {
+            Text("Crea Post")
+        }
+
+        Text(
+            text = resultText,
+            color = Color.White,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
 }
+
+
 
 //TODO NAVIGAZIONE ALTRE PAGINE
 @OptIn(ExperimentalMaterial3Api::class)
@@ -968,8 +1162,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
             .clickable { /*TODO NAVIGATE (MapPage)*/ },
         actions = {
             IconButton(onClick = {
-                // TODO: Add navigation or action for the plus button
-                // Example: navController.navigate("addPost")
+                navController.navigate("addPost/{$title}")
             }) {
                 Icon(
                     imageVector = Icons.Filled.AddCircle,
