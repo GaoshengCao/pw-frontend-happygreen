@@ -577,13 +577,7 @@ fun RegisterPage(navController: NavHostController) {
 @Composable
 fun HomePage(navController: NavHostController) {
     //Variabili Per Testare
-    val coroutineScope = rememberCoroutineScope()
-    var groups by remember { mutableStateOf<List<Post>?>(emptyList()) }
-
-    coroutineScope.launch() {
-        val api = RetrofitInstance.api
-
-    }
+    val groups = listOf("Family", "Work", "Friends", "Study")
 
     Scaffold(
         topBar = { HeaderBar(navController, "HappyGreen") },
@@ -696,8 +690,19 @@ fun CreateGroupPage(navController: NavHostController) {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Nome Gruppo") },
+                label = { Text("Username") },
                 singleLine = true,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
 
@@ -722,9 +727,9 @@ fun CreateGroupPage(navController: NavHostController) {
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank()
+                enabled = username.isNotBlank() && password.isNotBlank()
             ) {
-                Text("Crea Gruppo")
+                Text("Login")
             }
             Text(risultato)
         }
