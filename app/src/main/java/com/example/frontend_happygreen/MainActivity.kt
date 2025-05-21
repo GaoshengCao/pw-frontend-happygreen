@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -430,7 +431,6 @@ fun RegisterPage(navController: NavHostController) {
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
 
     var risultato by remember { mutableStateOf("") }
 
@@ -506,6 +506,8 @@ fun RegisterPage(navController: NavHostController) {
 
                         if (firstWord == "Registered") {
                             // Success
+                            val id = getId(apiService,username)
+                            SecureStorage.saveUser(context,id)
                             SecureStorage.saveToken(context, loginUser(apiService, username, password))
                             navController.navigate("home")
                         } else {
@@ -583,18 +585,6 @@ fun ElementGroup(navController: NavHostController, name : String){
                 modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
             )
             Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = {
-                    navController.navigate("group/$name")
-                },
-                contentPadding = PaddingValues(8.dp),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowForward,
-                    contentDescription = "Go to group"
-                )
-            }
         }
     }
 }
@@ -613,6 +603,8 @@ fun CreateGroupPage(navController: NavHostController) {
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    var risultato by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -675,10 +667,18 @@ fun CreateGroupPage(navController: NavHostController) {
             Button(
                 onClick = {
                     coroutineScope.launch {
+
                         val api = RetrofitInstance.api
-                        val apiToken = loginUser(api, username, password)
-                        SecureStorage.saveToken(context, apiToken)
-                        navController.navigate("home")
+                        val id = SecureStorage.getUser(context)
+                        val responce = createGroup(api,id,username)
+
+                        val firstWord = responce.split(" ")?.firstOrNull()
+
+                        if (firstWord == "Created"){
+                            navController.navigate("home")
+                        }else{
+                            risultato = responce
+                        }
                     }
                 },
                 shape = RoundedCornerShape(5.dp),
@@ -687,6 +687,7 @@ fun CreateGroupPage(navController: NavHostController) {
             ) {
                 Text("Login")
             }
+            Text(risultato)
         }
     }
 }
@@ -697,7 +698,13 @@ fun CreateGroupPage(navController: NavHostController) {
 @Composable
 fun GroupPage(navController: NavHostController, nome : String) {
     //Variabile per testare
-    val posts = listOf("Post 1", "Post 2", "Post 3", "Post 4")
+    val coroutineScope = rememberCoroutineScope()
+    coroutineScope.launch {
+        val api = RetrofitInstance.api
+        val id = getIDGroup(api,nome)
+        val posts = getPost(api,id)
+    }
+
 
     Scaffold(
         topBar = { GroupHeaderBar(navController, nome) },
