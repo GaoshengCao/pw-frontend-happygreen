@@ -7,10 +7,12 @@ import android.icu.text.CaseMap.Title
 import android.os.Bundle
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.view.WindowInsets
+import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,6 +65,7 @@ import androidx.compose.runtime.traceEventEnd
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
@@ -80,6 +83,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -89,7 +93,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.example.frontend_happygreen.ui.theme.FrontendhappygreenTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.graphics.Color as AndroidColor
+import androidx.compose.ui.graphics.Color as ComposeColor
+
+fun String.toComposeColor(): ComposeColor = ComposeColor(AndroidColor.parseColor(this))
 
 object UserInfo{
     var utente : User? = null
@@ -148,11 +157,11 @@ class MainActivity : ComponentActivity() {
             FrontendhappygreenTheme {
                 val navController = rememberNavController()
                 val context = LocalContext.current.applicationContext
-                var page = "home"
+                var page = "splash_screen"
                 val security = SecureStorage.getToken(context)
 
                 if (SecureStorage.getToken(context) == null){
-                    page = "first"
+                    page = "splash_screen"
                 }
 
 
@@ -163,6 +172,7 @@ class MainActivity : ComponentActivity() {
                         startDestination = page,
                         modifier = Modifier.navigationBarsPadding()
                     ) {
+                        composable("splash_screen") { SplashScreen(navController = navController) }
                         composable("first"){ FirstPage((navController))} // 1
                         composable("login"){ LoginPage((navController)) } // 2
                         composable("register"){ RegisterPage((navController))} // 3
@@ -183,6 +193,37 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SplashScreen(navController: NavController) {
+    val scale = remember {
+        androidx.compose.animation.core.Animatable(0f)
+    }
+
+    // AnimationEffect
+    LaunchedEffect(key1 = true) {
+        scale.animateTo(
+            targetValue = 0.7f,
+            animationSpec = tween(
+                durationMillis = 800,
+                easing = {
+                    OvershootInterpolator(4f).getInterpolation(it)
+                })
+        )
+        delay(3000L)
+        navController.navigate("first")
+    }
+
+    // Image
+    Box(contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize()
+            .background("#4CAF50".toComposeColor())
+    ) {
+        Image(painter = painterResource(id = R.drawable.logo),
+            contentDescription = "Logo",
+            modifier = Modifier.scale(scale.value))
     }
 }
 
