@@ -1185,6 +1185,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
                 navController.navigate("addPost/${title}")
             }) {
                 Icon(
+                    //Dovrebbe Funzionare
                     imageVector = Icons.Filled.AddCircle,
                     contentDescription = "Add",
                     tint = MaterialTheme.colorScheme.onPrimary,

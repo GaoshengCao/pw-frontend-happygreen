@@ -168,7 +168,7 @@ suspend fun createPost(api: ApiService, context: Context, newPostData: PostData)
             "Post creation failed: ${response.errorBody()?.string()}"
         }
     } catch (e: Exception) {
-        "Error creating post: ${e.message}"
+        "Error creating post: ${e.message}" //Ciao
     }
 }
 
