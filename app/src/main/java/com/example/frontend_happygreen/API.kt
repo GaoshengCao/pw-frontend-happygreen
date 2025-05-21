@@ -83,9 +83,9 @@ data class NewGroup(
 )
 data class Group(
     @SerializedName("id") val id: Int,
-    @SerializedName("name") val name: String?,
+    @SerializedName("name") val name: String,
     @SerializedName("created_by") val created_by: Int,
-    @SerializedName("created_at") val created_at: String?
+    @SerializedName("created_at") val created_at: String
 )
 data class Membership(
     @SerializedName("id") val id: Int,

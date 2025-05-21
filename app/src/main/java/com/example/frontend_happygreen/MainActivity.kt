@@ -4,13 +4,16 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.icu.text.CaseMap.Title
+import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.view.WindowInsets
 import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
@@ -92,17 +95,27 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import coil.compose.rememberAsyncImagePainter
 import com.example.frontend_happygreen.ui.theme.FrontendhappygreenTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
 
 fun String.toComposeColor(): ComposeColor = ComposeColor(AndroidColor.parseColor(this))
-
-object UserInfo{
-    var utente : User? = null
-}
 
 object SecureStorage {
 
@@ -156,14 +169,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             FrontendhappygreenTheme {
                 val navController = rememberNavController()
-                val context = LocalContext.current.applicationContext
                 var page = "splash_screen"
-                val security = SecureStorage.getToken(context)
-
-                if (SecureStorage.getToken(context) == null){
-                    page = "splash_screen"
-                }
-
 
                 Surface (modifier = Modifier.fillMaxSize()
                 ){
@@ -172,18 +178,21 @@ class MainActivity : ComponentActivity() {
                         startDestination = page,
                         modifier = Modifier.navigationBarsPadding()
                     ) {
-                        composable("splash_screen") { SplashScreen(navController = navController) }
+                        composable("splash_screen") { SplashScreen(navController) }
                         composable("first"){ FirstPage((navController))} // 1
                         composable("login"){ LoginPage((navController)) } // 2
                         composable("register"){ RegisterPage((navController))} // 3
                         composable("home") { HomePage(navController) } // 4
                         composable("createGroup"){ CreateGroupPage((navController))} // 5
-//                        composable("enterGroup"){ EnterGroupPage((navController))} // 6
+                        composable("enterGroup"){ EnterGroupPage((navController))} // 6
 //                        composable("groupmap"){ GroupMapPage((navController))} // 8
                         composable("group/{name}"){ backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
                         GroupPage(navController,name)} // 7
-//                        composable("addPost"){ AddPostPage((navController))} // 9
+                        composable("addPost/{name}"){ backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name") ?: "???"
+                            AddPostPage(navController,name)
+                        } // 9
 //                        composable("comment"){ CommentPage((navController))} // 10
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
@@ -201,6 +210,8 @@ fun SplashScreen(navController: NavController) {
     val scale = remember {
         androidx.compose.animation.core.Animatable(0f)
     }
+    val context = LocalContext.current.applicationContext
+
 
     // AnimationEffect
     LaunchedEffect(key1 = true) {
@@ -213,7 +224,13 @@ fun SplashScreen(navController: NavController) {
                 })
         )
         delay(3000L)
-        navController.navigate("first")
+        if (SecureStorage.getToken(context) == null){
+            navController.navigate("first")
+        }else{
+            navController.navigate("home")
+        }
+
+
     }
 
     // Image
@@ -471,7 +488,6 @@ fun RegisterPage(navController: NavHostController) {
     val coroutineScope = rememberCoroutineScope()
     //Salvataggio Token
     val context = LocalContext.current.applicationContext
-    val token = remember { mutableStateOf<String?>(null) }
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -578,11 +594,13 @@ fun RegisterPage(navController: NavHostController) {
 fun HomePage(navController: NavHostController) {
     //Variabili Per Testare
     val coroutineScope = rememberCoroutineScope()
-    var groups by remember { mutableStateOf<List<Post>?>(emptyList()) }
+    val context = LocalContext.current.applicationContext
 
-    coroutineScope.launch() {
+    var groups by remember { mutableStateOf<List<Group>>(emptyList()) }
+    val userId = SecureStorage.getUser(context)
+    LaunchedEffect(userId) {
         val api = RetrofitInstance.api
-
+        groups = getGroupsByUserID(api, userId)
     }
 
     Scaffold(
@@ -592,19 +610,32 @@ fun HomePage(navController: NavHostController) {
         // Main content inside the Scaffold, using Column to organize UI elements vertically
         Column(
             modifier = Modifier
-                .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .fillMaxSize(), // Make sure the column takes up the available space
-
-            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
-            verticalArrangement = Arrangement.Top // Center contents vertically
-
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
-
-            groups.forEach { group ->
-                ElementGroup(navController = navController, name = group)
+            // List of groups with dividers
+            groups.forEachIndexed { index, group ->
+                ElementGroup(navController, group)
+                if (index != groups.lastIndex) {
+                    Divider(
+                        color = Color.LightGray,
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .fillMaxWidth()
+                    )
+                }
             }
-            // Add Navigation Buttons with vertical spacing between them
+            Divider(
+                color = Color.LightGray,
+                thickness = 1.dp,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+            )
             Spacer(modifier = Modifier.height(16.dp))
             NavigationButton("Crea Gruppo", "createGroup", navController)
             Spacer(modifier = Modifier.height(4.dp))
@@ -614,13 +645,12 @@ fun HomePage(navController: NavHostController) {
 }
 
 @Composable
-fun ElementGroup(navController: NavHostController, name : String){
+fun ElementGroup(navController: NavHostController, group: Group){
     Box(modifier = Modifier
         .fillMaxWidth()
-        .padding(8.dp)
-        .background(Color.LightGray)
+        .padding(0.dp)
         .clickable {
-        navController.navigate("group/$name");
+        navController.navigate("group/${group.name}");
     },
     ){
         Row(
@@ -629,7 +659,7 @@ fun ElementGroup(navController: NavHostController, name : String){
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
-                text = name,
+                text = group.name,
                 style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
 
                 modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
@@ -642,7 +672,6 @@ fun ElementGroup(navController: NavHostController, name : String){
 //
 // 5 (Create Group)
 //
-//TODO
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateGroupPage(navController: NavHostController) {
@@ -737,7 +766,7 @@ fun CreateGroupPage(navController: NavHostController) {
 //TODO
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JoinGroupPage(navController: NavHostController) {
+fun EnterGroupPage(navController: NavHostController) {
     //  Per API
     val coroutineScope = rememberCoroutineScope()
     //Salvataggio Token
@@ -788,7 +817,7 @@ fun JoinGroupPage(navController: NavHostController) {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text("Group ID") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
@@ -814,7 +843,7 @@ fun JoinGroupPage(navController: NavHostController) {
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank() && password.isNotBlank()
+                enabled = username.isNotBlank()
             ) {
                 Text("Join")
             }
@@ -936,11 +965,11 @@ fun ElementPost(navController: NavHostController, name: String) {
 //TODO NAVIGAZIONE ALTRE PAGINE
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroupHeaderBar(navController: NavHostController, title: String) {
+fun GroupHeaderBar(navController: NavHostController, nome: String) {
     TopAppBar(
         title = {
             Text(
-                text = title,
+                text = nome,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Black,
             )
@@ -951,8 +980,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
             .clickable { /*TODO NAVIGATE (MapPage)*/ },
         actions = {
             IconButton(onClick = {
-                // TODO: Add navigation or action for the plus button
-                // Example: navController.navigate("addPost")
+                navController.navigate("addPost/{$nome}")
             }) {
                 Icon(
                     imageVector = Icons.Filled.AddCircle,
@@ -969,6 +997,181 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
         )
     )
 }
+
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun AddPostPage(navController: NavHostController, groupName: String) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    var description by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var location by remember { mutableStateOf<LatLng?>(null) }
+    var resultText by remember { mutableStateOf("") }
+
+    // Location permission state
+    val permissionState = rememberPermissionState(
+        android.Manifest.permission.ACCESS_FINE_LOCATION
+    )
+
+    // Image picker launcher
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        imageUri = uri
+    }
+
+    // Fused location
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    // Get user location if permission is granted
+    LaunchedEffect(permissionState.status.isGranted) {
+        if (permissionState.status.isGranted) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { locationResult ->
+                    locationResult?.let {
+                        location = LatLng(it.latitude, it.longitude)
+                    }
+                }
+            }
+        } else {
+            permissionState.launchPermissionRequest()
+        }
+    }
+
+
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+            .verticalScroll(rememberScrollState())
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Aggiungi Post a $groupName",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Descrizione") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            singleLine = false,
+            maxLines = 3
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = { launcher.launch("image/*") },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Seleziona Immagine")
+        }
+
+        imageUri?.let {
+            Image(
+                painter = rememberAsyncImagePainter(it),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .height(200.dp)
+                    .fillMaxWidth(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        location?.let {
+            Text(
+                text = "Posizione selezionata: ${it.latitude}, ${it.longitude}",
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+
+        // Google Map for location picking
+        Text(
+            text = "Tocca la mappa per selezionare un'altra posizione:",
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        val cameraPositionState = rememberCameraPositionState {
+            position = CameraPosition.fromLatLngZoom(location ?: LatLng(41.9028, 12.4964), 6f)
+        }
+
+        GoogleMap(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(horizontal = 16.dp),
+            cameraPositionState = cameraPositionState,
+            onMapClick = { latLng ->
+                location = latLng
+            }
+        ) {
+            location?.let {
+                Marker(
+                    state = MarkerState(position = it),
+                    title = "Posizione selezionata"
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    // TODO: implement API upload with image, description, and location
+                    resultText = "Post creato con descrizione: $description\nCoordinate: ${location?.latitude}, ${location?.longitude}"
+                }
+            },
+            shape = RoundedCornerShape(5.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .align(Alignment.CenterHorizontally),
+            enabled = description.isNotBlank() && location != null
+        ) {
+            Text("Crea Post")
+        }
+
+        Text(
+            text = resultText,
+            color = Color.White,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+
 
 
 
@@ -1064,14 +1267,7 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
 //
 
 //
-//@Composable
-//fun AddPostPage(navController: NavHostController) {
-//
-//    //TextBox Descrizione Post
-//    //Carica Immagine
-//    //Inserimento Luogo
-//
-//}
+
 //
 //@Composable
 //fun CommentPage(navController: NavHostController) {

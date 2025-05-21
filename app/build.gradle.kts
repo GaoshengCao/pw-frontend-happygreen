@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.android)
     implementation(libs.androidx.foundation.android)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -64,5 +65,12 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("androidx.navigation:navigation-compose:2.4.0-alpha06")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    implementation("com.google.maps.android:maps-compose:2.11.4") // latest as of 2024
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
 
 }
