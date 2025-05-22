@@ -895,8 +895,6 @@ fun GroupPage(navController: NavHostController, nome: String) {
     }
 }
 
-
-//TODO
 @Composable
 fun ElementPost(navController: NavHostController, post: Post) {
     val coroutineScope = rememberCoroutineScope()
@@ -1225,14 +1223,108 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
 //
 // 10 (Comment Page)
 //
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CommentPage(navController: NavHostController, postId : Int) {
+fun CommentPage(navController: NavHostController, postId: Int) {
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    //Lista Commenti:
-    //Nome Utente
-    //Commento
+    var post by remember { mutableStateOf<Post?>(null) }
+    var author by remember { mutableStateOf("") }
+    var comments by remember { mutableStateOf<List<Comment>>(emptyList()) }
+    var newComment by remember { mutableStateOf("") }
 
+    LaunchedEffect(postId) {
+        val api = RetrofitInstance.api
+        val fetchedPost = getPostById(api, postId)
+        post = fetchedPost
+        author = getUsernameById(api, fetchedPost.author).toString()
+        comments = getCommentsByPostId(api, postId)
+    }
+
+    post?.let { currentPost ->
+        val text = currentPost.text
+        val imageLink = currentPost.image
+        val lat = currentPost.location_lat ?: 0.0
+        val lng = currentPost.location_lng ?: 0.0
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(79, 149, 157))
+                .verticalScroll(rememberScrollState())
+        ) {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+
+            // Post Info
+            Text("Autore: $author", color = Color.White, modifier = Modifier.padding(8.dp))
+            Text("Testo: $text", color = Color.White, modifier = Modifier.padding(8.dp))
+            AsyncImage(
+                model = imageLink,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Crop
+            )
+            Text("Posizione: ($lat, $lng)", color = Color.White, modifier = Modifier.padding(8.dp))
+
+            Divider(color = Color.White, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+
+            // Comments Section
+            Text("Commenti:", color = Color.White, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
+
+            comments.forEach { comment ->
+                CommentElement(navController, comment.text, comment.author)
+            }
+
+            // Add new comment
+            OutlinedTextField(
+                value = newComment,
+                onValueChange = { newComment = it },
+                label = { Text("Scrivi un commento") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val api = RetrofitInstance.api
+                        val userId = SecureStorage.getUser(context)
+                        val result = addCommentToPost(api, postId, userId, newComment)
+
+                        if (result) {
+                            comments = getCommentsByPostId(api, postId)
+                            newComment = ""
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 16.dp),
+                enabled = newComment.isNotBlank()
+            ) {
+                Text("Invia Commento")
+            }
+        }
+    } ?: run {
+        // Loading state
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Caricamento post...", color = Color.White)
+        }
+    }
 }
+
 
 
 
@@ -1316,22 +1408,6 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
     }
 }
 
-
-//TODO
-//@Composable
-//fun EnterGroupPage(navController: NavHostController) {
-//
-//    //TextBox Codice Gruppo
-//    //Bottone Invia
-//
-//}
-//
-
-//
-
-//
-
-//
 //@Composable
 //fun GroupMapPage(navController: NavHostController) {
 //

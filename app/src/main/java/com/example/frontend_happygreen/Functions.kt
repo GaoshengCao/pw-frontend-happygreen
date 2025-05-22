@@ -203,3 +203,14 @@ suspend fun getUsernameById(api: ApiService,id: Int):String?{
     }
     return null
 }
+
+suspend fun getPostById(api: ApiService,postId: Int): Post{
+    val posts = api.getPosts()
+
+    for (post in posts) {
+        if (post.id == postId){
+            return post
+        }
+    }
+    return null
+}
