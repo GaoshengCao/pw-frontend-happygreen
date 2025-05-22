@@ -68,18 +68,6 @@ suspend fun createGroup(api: ApiService, creatorID: Int, groupName: String) : St
     }
 }
 
-
-suspend fun getPost(api: ApiService, groupID: Int): List<Post>? {
-    return try {
-        val response = api.getPosts() // Assuming this returns List<Post>
-        val filteredPosts = response.filter { it.group == groupID }
-        filteredPosts
-    } catch (e: Exception) {
-        Log.e("getPost", "Error: ${e.message}")
-        null
-    }
-}
-
 suspend fun getIDGroup(api: ApiService,groupName:String): Int{
     val groups = api.getAllGroups()
 
@@ -172,4 +160,46 @@ suspend fun createPost(api: ApiService, context: Context, newPostData: PostData)
     }
 }
 
+suspend fun getPostByGroupName(api: ApiService,nomeGruppo : String): List<Post>?{
+    val groupID = getIDGroup(api,nomeGruppo)
+    val resultPosts = mutableListOf<Post>()
 
+    try {
+        val allPosts = api.getPosts()
+        for (post in allPosts) {
+            if (post.group == groupID) {
+                resultPosts.add(post)
+            }
+        }
+    } catch (e: Exception) {
+        println("Error: ${e.message}")
+    }
+
+    return resultPosts
+}
+
+suspend fun getGroupNameById(api: ApiService, id : Int): String{
+    try {
+        val allgroups = api.getAllGroups()
+        for (group in allgroups){
+            if(group.id == id){
+                return group.name
+            }
+        }
+
+    } catch (e: Exception) {
+        println("Error: ${e.message}")
+    }
+    return "Fallimento Tu sei"
+}
+
+suspend fun getUsernameById(api: ApiService,id: Int):String?{
+    try {
+        val user = api.getUser(id)
+        return user.username
+
+    } catch (e: Exception) {
+        println("Error: ${e.message}")
+    }
+    return null
+}

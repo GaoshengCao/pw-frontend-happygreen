@@ -17,6 +17,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Image
@@ -200,7 +204,9 @@ class MainActivity : ComponentActivity() {
                        composable("addPost/{name}"){ backStackEntry ->
                            val name = backStackEntry.arguments?.getString("name") ?: "???"
                            AddPostPage(navController,name)} // 9
-//                        composable("comment"){ CommentPage((navController))} // 10
+                        composable("comment/{id}"){ backStackEntry ->
+                            val id = backStackEntry.arguments?.getInt("id") ?: 0
+                            CommentPage(navController,id)} // 10
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
                         composable("user") { UserPage(navController) }
@@ -854,53 +860,78 @@ fun JoinGroupPage(navController: NavHostController) {
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun GroupPage(navController: NavHostController, nome : String) {
-    //Variabile per testare
+    //Variabili Per Testare
     val coroutineScope = rememberCoroutineScope()
     var posts by remember { mutableStateOf<List<Post>?>(emptyList()) }
+    val context = LocalContext.current.applicationContext
 
-    LaunchedEffect(nome) {
+    val userId = SecureStorage.getUser(context)
+
+    LaunchedEffect(userId) {
         val api = RetrofitInstance.api
-        val id = getIDGroup(api, nome)
-        posts = getPost(api, id)
+        posts = getPostByGroupName(api, nome)
     }
 
-
     Scaffold(
-        topBar = { GroupHeaderBar(navController, nome) },
+        topBar = { HeaderBar(navController, nome) },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         // Main content inside the Scaffold, using Column to organize UI elements vertically
         Column(
             modifier = Modifier
-                .padding(paddingValues) // Ensure the content respects Scaffold's padding
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .fillMaxSize(), // Make sure the column takes up the available space
-
-            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
-            verticalArrangement = Arrangement.Top // Center contents vertically
-
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
-
-//            LazyColumn {
-//                items(posts) { post ->
-//                    Text(text = post.title)
-//                }
-//            }
+            // List of groups with dividers
+            posts?.forEachIndexed { index, post ->
+                ElementGroup(navController, group)
+                if (index != groups?.lastIndex) {
+                    Divider(
+                        color = Color.LightGray,
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .fillMaxWidth()
+                    )
+                }
+            }
         }
     }
 }
 
 //TODO
 @Composable
-fun ElementPost(navController: NavHostController, name: String) {
+fun ElementPost(navController: NavHostController, post: Post) {
+    //Variabili Per Testare
+    val coroutineScope = rememberCoroutineScope()
+
+
+    var author by remember { mutableStateOf<String>("") }
+    var text by remember { mutableStateOf<String>("") }
+    var imageLink by remember { mutableStateOf<String>("") }
+
+    var lat by remember { mutableStateOf<Double>(0.0) }
+    var lng by remember { mutableStateOf<Double>(0.0) }
+
+
+    LaunchedEffect(post) {
+        val api = RetrofitInstance.api
+        author = getUsernameById(api,post.author).toString()
+        text = post.text.toString()
+        imageLink = post.image.toString()
+        lat = (post.location_lat?.toDouble() ?: 0) as Double
+        lng = (post.location_lng?.toDouble() ?: 0) as Double
+
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .background(Color.LightGray)
-            .clickable {
-                navController.navigate("group/$name")
-            }
     ) {
         Column(
             modifier = Modifier
@@ -909,7 +940,7 @@ fun ElementPost(navController: NavHostController, name: String) {
         ) {
             // Title
             Text(
-                text = name,
+                text = author,
                 style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -922,7 +953,14 @@ fun ElementPost(navController: NavHostController, name: String) {
                     .background(Color.DarkGray), // Replace with Image if needed
                 contentAlignment = Alignment.Center
             ) {
-//                Image()
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageLink)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop // or Fit, FillBounds, etc.
+                )
             }
 
             // Text + Button Section
@@ -935,7 +973,7 @@ fun ElementPost(navController: NavHostController, name: String) {
             ) {
                 // Description or preview text
                 Text(
-                    text = "Group preview or description goes here...",
+                    text = text,
                     modifier = Modifier.weight(1f),
                     style = TextStyle(fontSize = 16.sp)
                 )
@@ -943,7 +981,7 @@ fun ElementPost(navController: NavHostController, name: String) {
                 // Button on the left side
                 Button(
                     onClick = {
-                        navController.navigate("group/$name")
+                        navController.navigate("comment/${post.id}")
                     },
                     modifier = Modifier
                         .padding(start = 8.dp)
@@ -1201,6 +1239,18 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
     )
 }
 
+//
+// 10 (Comment Page)
+//
+@Composable
+fun CommentPage(navController: NavHostController, postId : Int) {
+
+    //Lista Commenti:
+    //Nome Utente
+    //Commento
+
+}
+
 
 
 //TODO
@@ -1297,14 +1347,7 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
 //
 
 //
-//@Composable
-//fun CommentPage(navController: NavHostController) {
-//
-//    //Lista Commenti:
-//    //Nome Utente
-//    //Commento
-//
-//}
+
 //
 //@Composable
 //fun GroupMapPage(navController: NavHostController) {
