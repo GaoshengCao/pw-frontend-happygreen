@@ -66,7 +66,7 @@ interface ApiService {
 
 
     @GET("quizzes/{id}/")
-    suspend fun getQuiz(@Path("id") id: Int): Quiz
+    suspend fun getQuiz(@Path("id") id: Int): QuizQuestion
 
     @POST("token/")
     suspend fun getToken(@Body tokenRequest: LoginRequest): LoginResponse
@@ -176,25 +176,14 @@ data class ScannedObject(
     @SerializedName("location_lat") val location_lat: Double?,
     @SerializedName("location_lng") val location_lng: Double?
 )
-data class Quiz(
-    @SerializedName("id") val id: Int,
-    @SerializedName("title") val title: String?,
-    @SerializedName("description") val description: String?
-)
+
 data class QuizQuestion(
     @SerializedName("id") val id: Int,
-    @SerializedName("quiz") val quiz: Int,
-    @SerializedName("question_text") val question_text: String?,
-    @SerializedName("correct_answer") val correct_answer: String?,
-    @SerializedName("wrong_answers") val wrong_answers: List<String>?
+    @SerializedName("question_text") val question_text: String,
+    @SerializedName("correct_answer") val correct_answer: String,
+    @SerializedName("wrong_answers") val wrong_answers: List<String>
 )
-data class QuizResult(
-    @SerializedName("id") val id: Int,
-    @SerializedName("quiz") val quiz: Int,
-    @SerializedName("user") val user: Int,
-    @SerializedName("score") val score: Int,
-    @SerializedName("completed_at") val completed_at: String?
-)
+
 data class Badge(
     @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String?,

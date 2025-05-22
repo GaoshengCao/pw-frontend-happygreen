@@ -238,3 +238,32 @@ suspend fun addCommentToPost(api: ApiService,postId: Int,userId: Int,commentText
     }
     return returno
 }
+
+suspend fun getFiveQuizQuestion(api: ApiService): List<QuizQuestion> {
+    val resultQuiz = mutableListOf<QuizQuestion>()
+
+    val usedIds = mutableSetOf<Int>()
+    val maxTries = 10  // avoid infinite loop in case of too many duplicates
+
+    repeat(5) {
+        var attempts = 0
+        var quiz: QuizQuestion? = null
+
+        while (quiz == null && attempts < maxTries) {
+            val randomId = (1..40).random()  // Adjust range to your actual quiz ID range
+            if (!usedIds.contains(randomId)) {
+                try {
+                    quiz = api.getQuiz(randomId)
+                    usedIds.add(randomId)
+                    resultQuiz.add(quiz)
+                } catch (e: Exception) {
+                    println("Error: ${e.message}")
+
+                }
+            }
+            attempts++
+        }
+    }
+
+    return resultQuiz
+}

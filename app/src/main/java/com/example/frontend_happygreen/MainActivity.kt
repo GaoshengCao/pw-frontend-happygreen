@@ -1367,9 +1367,119 @@ fun GamePage(navController: NavHostController) {
         topBar = { HeaderBar(navController,"Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        CenteredContent(paddingValues, "Giochi")
+        Button(onClick = {navController.navigate("")}) { }
     }
 }
+
+@Composable
+fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
+    var currentIndex by remember { mutableStateOf(0) }
+    var selectedAnswer by remember { mutableStateOf<String?>(null) }
+    var showNextButton by remember { mutableStateOf(false) }
+    var shuffledAnswers by remember {
+        mutableStateOf(listOf<String>())
+    }
+    var score by remember { mutableStateOf(0) } // 👈 score counter
+
+    val currentQuestion = questions.getOrNull(currentIndex)
+
+    LaunchedEffect(currentIndex) {
+        currentQuestion?.let {
+            selectedAnswer = null
+            showNextButton = false
+            shuffledAnswers = (it.wrong_answers + it.correct_answer).shuffled()
+        }
+    }
+
+    currentQuestion?.let { question ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Domanda ${currentIndex + 1}/${questions.size}",
+                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Text(
+                text = question.question_text,
+                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            shuffledAnswers.forEach { answer ->
+                val isSelected = selectedAnswer == answer
+                val backgroundColor = when {
+                    !showNextButton -> Color.LightGray
+                    answer == question.correct_answer -> Color(0xFFAAF683)
+                    isSelected && answer != question.correct_answer -> Color(0xFFFF686B)
+                    else -> Color.LightGray
+                }
+
+                Button(
+                    onClick = {
+                        if (selectedAnswer == null) {
+                            selectedAnswer = answer
+                            showNextButton = true
+                            if (answer == question.correct_answer) {
+                                score++ // ✅ Increment score
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
+                    enabled = selectedAnswer == null
+                ) {
+                    Text(answer)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (showNextButton) {
+                Button(
+                    onClick = {
+                        if (currentIndex < questions.lastIndex) {
+                            currentIndex++
+                        } else {
+                            navController.navigate("quiz_result/$score/${questions.size}")
+                        }
+                    }
+                ) {
+                    Text(if (currentIndex < questions.lastIndex) "Next" else "Finish")
+                }
+            }
+        }
+    } ?: run {
+        Text("Loading quiz...")
+    }
+}
+
+@Composable
+fun QuizResultPage(score: Int, total: Int, navController: NavHostController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Hai totalizzato $score su $total!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(onClick = { navController.popBackStack() }) {
+            Text("Torna indietro")
+        }
+    }
+}
+
+
+
 
 //TODO
 @Composable
@@ -1445,5 +1555,3 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
 //
 //    //Mappa con Tutte le Punte Di dove Sono I post
 //}
-//
-//
