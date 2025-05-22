@@ -66,11 +66,11 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.4.0-alpha06")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation(libs.coil.compose)
 
-    implementation("com.google.maps.android:maps-compose:2.11.4") // latest as of 2024
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation(libs.maps.compose) // latest as of 2024
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
+    implementation(libs.accompanist.permissions)
 
 
 }
