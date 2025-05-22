@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1533,12 +1534,27 @@ fun UserPage(navController: NavHostController) {
 @Composable
 fun OptionsPage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController,"Happy Green") },
+        topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        CenteredContent(paddingValues, "Opzioni")
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.maxwell), // your drawable
+                contentDescription = "Centered Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.78f), // adjust ratio to your image aspect (e.g., 16:9 ~ 1.78)
+                contentScale = ContentScale.FillWidth
+            )
+        }
     }
 }
+
 
 
 //Semplici Bottoni di Navigazione
