@@ -15,6 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -97,10 +99,12 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import coil.compose.rememberAsyncImagePainter
@@ -201,9 +205,15 @@ class MainActivity : ComponentActivity() {
                        composable("addPost/{name}"){ backStackEntry ->
                            val name = backStackEntry.arguments?.getString("name") ?: "???"
                            AddPostPage(navController,name)} // 9
-                        composable("comment/{id}"){ backStackEntry ->
+                        composable(
+                            "comment/{id}",
+                            arguments = listOf(navArgument("id") {
+                                type = NavType.IntType
+                            })
+                        ) { backStackEntry ->
                             val id = backStackEntry.arguments?.getInt("id") ?: 0
-                            CommentPage(navController,id)} // 10
+                            CommentPage(navController, id)
+                        } // 10
                         composable("game") { GamePage(navController) }
                         composable("camera") { CameraPage(navController) }
                         composable("user") { UserPage(navController) }
@@ -902,7 +912,8 @@ fun ElementPost(navController: NavHostController, post: Post) {
 
     // Direct mapping
     val text = post.text
-    val imageLink = post.image
+    val imageLink = post.image?.replaceFirst("http://", "https://") ?: ""
+
     val lat = post.location_lat ?: 0.0
     val lng = post.location_lng ?: 0.0
 
@@ -928,17 +939,15 @@ fun ElementPost(navController: NavHostController, post: Post) {
 
             // Post image
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageLink)
-                    .crossfade(true)
-                    .build(),
+                model = imageLink,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .height(200.dp),
                 contentScale = ContentScale.Crop
             )
+
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -1238,13 +1247,13 @@ fun CommentPage(navController: NavHostController, postId: Int) {
         val api = RetrofitInstance.api
         val fetchedPost = getPostById(api, postId)
         post = fetchedPost
-        author = post?.let { getUsernameById(api, it.author).toString() }.toString()
+        author = post?.let { getUsernameById(api, it.author) } ?: "Unknown"
         comments = getCommentsByPostId(api, postId)
     }
 
     post?.let { currentPost ->
         val text = currentPost.text
-        val imageLink = currentPost.image
+        val imageLink = post!!.image?.replaceFirst("http://", "https://") ?: ""
         val lat = currentPost.location_lat ?: 0.0
         val lng = currentPost.location_lng ?: 0.0
 
@@ -1327,34 +1336,28 @@ fun CommentPage(navController: NavHostController, postId: Int) {
 
 //Riga Di commento Con Autore e Testo
 @Composable
-fun CommentElement(navController: NavHostController, text: String, author:Int){
+fun CommentElement(navController: NavHostController, text: String, author: Int) {
     var authorUsername by remember { mutableStateOf("") }
     LaunchedEffect(author) {
         val api = RetrofitInstance.api
-        authorUsername = getUsernameById(api,author).toString()
+        authorUsername = getUsernameById(api, author).toString()
     }
-    Box(modifier = Modifier
-        .fillMaxWidth(),
-    ){
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                text = authorUsername,
-                style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
-
-                modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = text,
-                style = TextStyle(fontSize = 14.sp),
-
-                modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 8.dp)
-            )
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = authorUsername,
+            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.padding(bottom = 2.dp)
+        )
+        Text(
+            text = text,
+            style = TextStyle(fontSize = 16.sp),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Divider(color = Color.Gray, thickness = 1.dp)
     }
 }
 
@@ -1500,7 +1503,7 @@ fun UserPage(navController: NavHostController) {
     val groups = listOf("Family", "Work", "Friends", "Study")
 
     Scaffold(
-        topBar = { HeaderBar(navController, "HappyGreen") },
+        topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         // Main content inside the Scaffold, using Column to organize UI elements vertically
