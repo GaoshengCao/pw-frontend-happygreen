@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -121,10 +122,6 @@ import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color as ComposeColor
 
 fun String.toComposeColor(): ComposeColor = ComposeColor(AndroidColor.parseColor(this))
-
-object UserInfo{
-    var utente : User? = null
-}
 
 object SecureStorage {
 
@@ -859,24 +856,21 @@ fun JoinGroupPage(navController: NavHostController) {
 //
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun GroupPage(navController: NavHostController, nome : String) {
-    //Variabili Per Testare
+fun GroupPage(navController: NavHostController, nome: String) {
     val coroutineScope = rememberCoroutineScope()
-    var posts by remember { mutableStateOf<List<Post>?>(emptyList()) }
+    var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     val context = LocalContext.current.applicationContext
-
     val userId = SecureStorage.getUser(context)
 
     LaunchedEffect(userId) {
         val api = RetrofitInstance.api
-        posts = getPostByGroupName(api, nome)
+        posts = getPostByGroupName(api, nome) ?: emptyList()
     }
 
     Scaffold(
         topBar = { HeaderBar(navController, nome) },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        // Main content inside the Scaffold, using Column to organize UI elements vertically
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -885,10 +879,9 @@ fun GroupPage(navController: NavHostController, nome : String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // List of groups with dividers
-            posts?.forEachIndexed { index, post ->
-                ElementGroup(navController, group)
-                if (index != groups?.lastIndex) {
+            posts.forEachIndexed { index, post ->
+                ElementPost(navController, post)
+                if (index != posts.lastIndex) {
                     Divider(
                         color = Color.LightGray,
                         thickness = 1.dp,
@@ -902,100 +895,90 @@ fun GroupPage(navController: NavHostController, nome : String) {
     }
 }
 
+
 //TODO
 @Composable
 fun ElementPost(navController: NavHostController, post: Post) {
-    //Variabili Per Testare
     val coroutineScope = rememberCoroutineScope()
+    var author by remember { mutableStateOf("") }
+
+    // Direct mapping
+    val text = post.text
+    val imageLink = post.image
+    val lat = post.location_lat ?: 0.0
+    val lng = post.location_lng ?: 0.0
 
 
-    var author by remember { mutableStateOf<String>("") }
-    var text by remember { mutableStateOf<String>("") }
-    var imageLink by remember { mutableStateOf<String>("") }
-
-    var lat by remember { mutableStateOf<Double>(0.0) }
-    var lng by remember { mutableStateOf<Double>(0.0) }
-
-
-    LaunchedEffect(post) {
+    LaunchedEffect(post.author) {
         val api = RetrofitInstance.api
-        author = getUsernameById(api,post.author).toString()
-        text = post.text.toString()
-        imageLink = post.image.toString()
-        lat = (post.location_lat?.toDouble() ?: 0) as Double
-        lng = (post.location_lng?.toDouble() ?: 0) as Double
-
+        author = getUsernameById(api, post.author) ?: "Unknown"
     }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .background(Color.LightGray)
+            .background(Color(0xFFEFEFEF), RoundedCornerShape(10.dp))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            // Title
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Author name
             Text(
                 text = author,
-                style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Image placeholder
-            Box(
+            // Post image
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageLink)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .background(Color.DarkGray), // Replace with Image if needed
-                contentAlignment = Alignment.Center
-            ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(imageLink)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop // or Fit, FillBounds, etc.
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Description
+            Text(
+                text = text,
+                style = TextStyle(fontSize = 16.sp),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Location (optional)
+            if (lat != 0.0 || lng != 0.0) {
+                Text(
+                    text = "📍 $lat, $lng",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray)
                 )
             }
 
-            // Text + Button Section
-            Row(
+            // Comment button
+            Button(
+                onClick = {
+                    navController.navigate("comment/${post.id}")
+                },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .align(Alignment.End)
+                    .padding(top = 8.dp)
             ) {
-                // Description or preview text
-                Text(
-                    text = text,
-                    modifier = Modifier.weight(1f),
-                    style = TextStyle(fontSize = 16.sp)
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Go to comments"
                 )
-
-                // Button on the left side
-                Button(
-                    onClick = {
-                        navController.navigate("comment/${post.id}")
-                    },
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .height(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Go to group"
-                    )
-                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Commenta")
             }
         }
     }
 }
+
 
 //
 // 9(Create Post)

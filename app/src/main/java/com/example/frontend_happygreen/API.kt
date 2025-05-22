@@ -130,7 +130,7 @@ data class Post(
     @SerializedName("id") val id: Int,
     @SerializedName("group") val group: Int,
     @SerializedName("author") val author: Int,
-    @SerializedName("text") val text: String?,
+    @SerializedName("text") val text: String,
     @SerializedName("image") val image: String?,
     @SerializedName("location_lat") val location_lat: Double?,
     @SerializedName("location_lng") val location_lng: Double?,
