@@ -45,6 +45,13 @@ interface ApiService {
     @GET("posts/{id}/")
     suspend fun getPost(@Path("id") id: Int): Post
 
+    @GET("comments/")
+    suspend fun getComments() : List<Comment>
+
+    @POST("comments/")
+    suspend fun createComment(@Body newComment: NewComment): retrofit2.Response<NewComment>
+
+
     @Multipart
     @POST("posts/")  // adjust path if needed
     suspend fun createPost(
@@ -152,6 +159,12 @@ data class Comment(
     @SerializedName("author") val author: Int,
     @SerializedName("text") val text: String?,
     @SerializedName("created_at") val created_at: String?
+)
+
+data class NewComment(
+    @SerializedName("post") val post: Int,
+    @SerializedName("author") val author: Int,
+    @SerializedName("text") val text: String,
 )
 data class ScannedObject(
     @SerializedName("id") val id: Int,

@@ -204,7 +204,7 @@ suspend fun getUsernameById(api: ApiService,id: Int):String?{
     return null
 }
 
-suspend fun getPostById(api: ApiService,postId: Int): Post{
+suspend fun getPostById(api: ApiService,postId: Int): Post?{
     val posts = api.getPosts()
 
     for (post in posts) {
@@ -213,4 +213,28 @@ suspend fun getPostById(api: ApiService,postId: Int): Post{
         }
     }
     return null
+}
+
+suspend fun getCommentsByPostId(api: ApiService,postId: Int):List<Comment>{
+    val comments = api.getComments()
+    val resultComments = mutableListOf<Comment>()
+
+    for (comment in comments){
+        if (comment.post == postId){
+            resultComments.add(comment)
+        }
+    }
+    return resultComments
+}
+
+suspend fun addCommentToPost(api: ApiService,postId: Int,userId: Int,commentText: String):String{
+    var returno = ""
+    try {
+        val newComment = NewComment(postId, userId,commentText)
+        val responce = api.createComment(newComment)
+        returno = responce.body().toString()
+    }catch (e: Exception){
+        println("Error: ${e.message}")
+    }
+    return returno
 }

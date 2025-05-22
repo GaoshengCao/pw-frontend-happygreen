@@ -1227,7 +1227,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
 @Composable
 fun CommentPage(navController: NavHostController, postId: Int) {
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
 
     var post by remember { mutableStateOf<Post?>(null) }
     var author by remember { mutableStateOf("") }
@@ -1238,7 +1238,7 @@ fun CommentPage(navController: NavHostController, postId: Int) {
         val api = RetrofitInstance.api
         val fetchedPost = getPostById(api, postId)
         post = fetchedPost
-        author = getUsernameById(api, fetchedPost.author).toString()
+        author = post?.let { getUsernameById(api, it.author).toString() }.toString()
         comments = getCommentsByPostId(api, postId)
     }
 
@@ -1283,7 +1283,7 @@ fun CommentPage(navController: NavHostController, postId: Int) {
             Text("Commenti:", color = Color.White, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
 
             comments.forEach { comment ->
-                CommentElement(navController, comment.text, comment.author)
+                CommentElement(navController, comment.text.toString(), comment.author)
             }
 
             // Add new comment
@@ -1303,7 +1303,7 @@ fun CommentPage(navController: NavHostController, postId: Int) {
                         val userId = SecureStorage.getUser(context)
                         val result = addCommentToPost(api, postId, userId, newComment)
 
-                        if (result) {
+                        if (result != "") {
                             comments = getCommentsByPostId(api, postId)
                             newComment = ""
                         }
@@ -1325,6 +1325,38 @@ fun CommentPage(navController: NavHostController, postId: Int) {
     }
 }
 
+//Riga Di commento Con Autore e Testo
+@Composable
+fun CommentElement(navController: NavHostController, text: String, author:Int){
+    var authorUsername by remember { mutableStateOf("") }
+    LaunchedEffect(author) {
+        val api = RetrofitInstance.api
+        authorUsername = getUsernameById(api,author).toString()
+    }
+    Box(modifier = Modifier
+        .fillMaxWidth(),
+    ){
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Text(
+                text = authorUsername,
+                style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
+
+                modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = text,
+                style = TextStyle(fontSize = 14.sp),
+
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 8.dp)
+            )
+        }
+    }
+}
 
 
 
