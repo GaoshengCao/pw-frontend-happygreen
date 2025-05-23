@@ -54,7 +54,7 @@ Il frontend supporta le seguenti funzionalità:
    https://github.com/GaoshengCao/pw-frontend-happygreen.git
 
 4.Cambiare in API.kt dell Object RetrofitInstance BASE_URL con l'url del server su è eseguito il serve con pw-backend-happygreen
-  https://github.com/GaoshengCao/pw-backend-happygreen
+   https://github.com/GaoshengCao/pw-backend-happygreen
    
 5. Esegui il programma
    Collega tramite cavo il telefono o scarica un emulatore Android.
