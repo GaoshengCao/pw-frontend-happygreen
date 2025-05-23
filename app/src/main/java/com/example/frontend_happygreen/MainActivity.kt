@@ -15,6 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import android.Manifest
 import android.content.pm.PackageManager
+import android.provider.MediaStore.Audio.Genres.Members
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -120,6 +121,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -201,7 +203,10 @@ class MainActivity : ComponentActivity() {
                         composable("home") { HomePage(navController) } // 4
                         composable("createGroup"){ CreateGroupPage((navController))} // 5
                         composable("enterGroup"){ JoinGroupPage((navController))} // 6
-//                        composable("groupmap"){ GroupMapPage((navController))} // 8
+                        composable("mapPage/{name}"){ backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name") ?: "???"
+                            GroupMapPage(navController,name)
+                        } // 8
                         composable("group/{name}"){ backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
                         GroupPage(navController,name)} // 7
@@ -1000,6 +1005,142 @@ fun ElementPost(navController: NavHostController, post: Post) {
         }
     }
 }
+//
+// 8(MapPage)
+//
+@OptIn(ExperimentalMaterial3Api::class, MapsComposeExperimentalApi::class)
+@Composable
+fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
+    val coroutineScope = rememberCoroutineScope()
+    var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
+    val context = LocalContext.current.applicationContext
+    val userId = SecureStorage.getUser(context)
+
+    var risultato by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var members by remember { mutableStateOf<List<User>>(emptyList()) }
+    var groupID by remember { mutableStateOf(0) }
+    LaunchedEffect(userId) {
+        val api = RetrofitInstance.api
+        groupID = getIDGroup(api,nomeGruppo)
+        posts = getPostByGroupName(api, nomeGruppo) ?: emptyList()
+        members = getMembersByGroupName(api, nomeGruppo)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val cameraPositionState = rememberCameraPositionState {
+                position = CameraPosition.fromLatLngZoom(
+                    posts.firstOrNull()?.let {
+                        LatLng(it.location_lat ?: 0.0, it.location_lng ?: 0.0)
+                    } ?: LatLng(0.0, 0.0), 10f
+                )
+            }
+
+            GoogleMap(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                cameraPositionState = cameraPositionState
+            ) {
+                posts.forEach { post ->
+                    val lat = post.location_lat
+                    val lng = post.location_lng
+
+                    if (lat != null && lng != null) {
+                        Marker(
+                            state = MarkerState(position = LatLng(lat, lng)),
+                            title = post.author.toString(),
+                            snippet = post.text
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "ID Gruppo : $groupID",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Membri del Gruppo",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White
+            )
+
+            Column {
+                for (user in members) {
+                    Text(
+                        text = user.username,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        color = Color.White
+                    )
+                }
+            }
+
+        }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        // Sezione da non toccare
+//                        val api = RetrofitInstance.api
+//                        val id = SecureStorage.getUser(context)
+//                        val responce = joinGroup(api,id,username.toInt())
+//
+//                        val firstWord = responce.split(" ")?.firstOrNull()
+//
+//                        if (firstWord == "Joined"){
+//                            navController.navigate("home")
+//                        }else{
+//                            risultato = responce
+//                        }
+                    }
+                },
+                shape = RoundedCornerShape(5.dp),
+                modifier = Modifier.fillMaxWidth(0.4f),
+                enabled = username.isNotBlank()
+            ) {
+                Text("Esci Gruppo")
+            }
+
+            Text(risultato, color = Color.White)
+        }
+    }
+
 
 
 //
@@ -1222,7 +1363,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(99, 169, 177))
-            .clickable { /*TODO NAVIGATE (MapPage)*/ },
+            .clickable { navController.navigate("mapPage/${title}")},
         actions = {
             IconButton(onClick = {
                 navController.navigate("addPost/${title}")
@@ -1699,8 +1840,4 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
     }
 }
 
-//@Composable
-//fun GroupMapPage(navController: NavHostController) {
-//
-//    //Mappa con Tutte le Punte Di dove Sono I post
-//}
+

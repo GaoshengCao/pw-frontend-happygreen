@@ -244,6 +244,21 @@ suspend fun getUsernameById(api: ApiService,id: Int):String?{
     return null
 }
 
+suspend fun getMembersByGroupName(api: ApiService, groupName: String): List<User> {
+    val groupID = getIDGroup(api, groupName)
+    val memberships = api.getMembership()
+    val users = mutableListOf<User>()
+
+    for (member in memberships) {
+        if (member.group == groupID) {
+            val user = api.getUser(member.user)
+            users.add(user)
+        }
+    }
+    return users
+}
+
+
 suspend fun getPostById(api: ApiService,postId: Int): Post?{
     val posts = api.getPosts()
 

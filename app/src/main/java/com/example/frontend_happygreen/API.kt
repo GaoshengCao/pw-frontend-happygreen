@@ -110,7 +110,7 @@ data class LoginResponse(
 )
 data class User(
     @SerializedName("id") val id: Int,
-    @SerializedName("username") val username: String?,
+    @SerializedName("username") val username: String,
     @SerializedName("profile_pic") val profile_pic: String?,
     @SerializedName("points") val points: Int,
     @SerializedName("level") val level: Int,
