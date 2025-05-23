@@ -1739,23 +1739,22 @@ fun QuizResultPage(score: Int, navController: NavHostController) {
     }
 }
 
-//TODO
+
 @Composable
 fun CameraPage(navController: NavHostController) {
     Scaffold(
         topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        Box(
+        ScannerScreen(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(onClick = { navController.navigate("quizpage") }) { Text("Ciaone") }
-        }
+                .padding(top = 5.dp)
+                .padding(paddingValues)
+        )
     }
 }
+
 
 @Composable
 fun UserPage(navController: NavHostController) {

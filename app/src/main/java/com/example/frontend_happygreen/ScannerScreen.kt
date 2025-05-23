@@ -97,10 +97,10 @@ fun ScannerScreen(modifier: Modifier = Modifier) {
 
     // Main UI layout
     Box(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .background(gradientBackground)
-            .padding(16.dp)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
