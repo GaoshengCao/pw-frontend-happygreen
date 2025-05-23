@@ -18,6 +18,7 @@ import retrofit2.http.Path
 
 
 interface ApiService {
+
     @GET("users/")
     suspend fun getAllUsers() : List<User>
 
@@ -63,7 +64,15 @@ interface ApiService {
         @Part image: MultipartBody.Part
     ): retrofit2.Response<CreatePostResponse>
 
-
+    @Multipart
+    @POST("users/")  // adjust path if needed
+    suspend fun updateUser(
+        @Part("username") group: RequestBody?,
+        @Part("points") author: RequestBody?,
+        @Part("level") text: RequestBody,
+        @Part("date_joined") locationLat: RequestBody?,
+        @Part image: MultipartBody.Part
+    ): retrofit2.Response<CreatePostResponse>
 
     @GET("quizzes/{id}/")
     suspend fun getQuiz(@Path("id") id: Int): QuizQuestion
@@ -151,6 +160,13 @@ data class PostData(
     val locationLat: Double?,
     val locationLng: Double?
 
+)
+data class UserData(
+    val Id: Int?,
+    val username: String?,
+    val imageUri: Uri,
+    val points: Int?,
+    val level: Int?,
 )
 
 data class Comment(

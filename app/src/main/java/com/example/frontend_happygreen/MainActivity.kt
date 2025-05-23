@@ -26,6 +26,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -216,6 +218,18 @@ class MainActivity : ComponentActivity() {
                             CommentPage(navController, id)
                         } // 10
                         composable("game") { GamePage(navController) }
+                        composable("quizpage"){
+                            val coroutineScope = rememberCoroutineScope()
+                            var quiz by remember { mutableStateOf<List<QuizQuestion>>(emptyList()) }
+                            coroutineScope.launch {
+                                val api = RetrofitInstance.api
+                                quiz = getFiveQuizQuestion(api)
+                            }
+                            QuizPage(navController,quiz)}
+                        composable("resultpage/{result}") { backStackEntry ->
+                            val result = backStackEntry.arguments?.getString("result")?.toIntOrNull() ?: -1
+                            QuizResultPage(result, navController)
+                        }
                         composable("camera") { CameraPage(navController) }
                         composable("user") { UserPage(navController) }
                         composable("options") { OptionsPage(navController) }
@@ -879,7 +893,7 @@ fun GroupPage(navController: NavHostController, nome: String) {
     }
 
     Scaffold(
-        topBar = { HeaderBar(navController, nome) },
+        topBar = { GroupHeaderBar(navController, nome) },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         Column(
@@ -1362,16 +1376,28 @@ fun CommentElement(navController: NavHostController, text: String, author: Int) 
     }
 }
 
-
-
-//TODO
+//
+// (GamePage)
+//
 @Composable
 fun GamePage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController,"Happy Green") },
+        topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        Button(onClick = {navController.navigate("")}) { }
+
+        // Wrappa il contenuto con un layout e applica il padding dello scaffold
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = { navController.navigate("quiz") }) {
+                Text("Inizia Quiz")
+            }
+        }
     }
 }
 
@@ -1452,7 +1478,7 @@ fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
                         if (currentIndex < questions.lastIndex) {
                             currentIndex++
                         } else {
-                            navController.navigate("quiz_result/$score/${questions.size}")
+                            navController.navigate("resultpage/${score}")
                         }
                     }
                 ) {
@@ -1466,7 +1492,7 @@ fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
 }
 
 @Composable
-fun QuizResultPage(score: Int, total: Int, navController: NavHostController) {
+fun QuizResultPage(score: Int, navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1474,10 +1500,10 @@ fun QuizResultPage(score: Int, total: Int, navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Hai totalizzato $score su $total!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text("Hai totalizzato $score su 5!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
-        Button(onClick = { navController.popBackStack() }) {
-            Text("Torna indietro")
+        Button(onClick = { navController.navigate("game") }) {
+            Text("Torna Schemata Giochi")
         }
     }
 }
@@ -1489,45 +1515,144 @@ fun QuizResultPage(score: Int, total: Int, navController: NavHostController) {
 @Composable
 fun CameraPage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController,"Happy Green") },
+        topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        CenteredContent(paddingValues, "Camera")
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(onClick = {navController.navigate("quizpage")}) { Text("Ciaone") }
+        }
     }
 }
 
 //TODO
 @Composable
 fun UserPage(navController: NavHostController) {
-    val context = LocalContext.current.applicationContext
-    //Variabili Per Testare
-    val groups = listOf("Family", "Work", "Friends", "Study")
+//    val context = LocalContext.current.applicationContext
+//    val coroutineScope = rememberCoroutineScope()
+//    val id = SecureStorage.getUser(context)
+//    var utente by remember { mutableStateOf<User?>(null) }
+//
+//    LaunchedEffect(id) {
+//        val api = RetrofitInstance.api
+//        utente = api.getUser(id)
+//    }
+//
+//    utente?.let { currentUser ->
+//        val usrn = currentUser.username
+//        val pic = utente!!.profile_pic?.replaceFirst("http://", "https://") ?: "https://stock.adobe.com/search/images?k=default+user"
+//        val pts = currentUser.points ?: 0
+//        val lvl = currentUser.level ?: 0
+//        val dte = currentUser.date_joined ?: null
+//        var resultText by remember { mutableStateOf("") }
+//        var imageUri by remember { mutableStateOf<Uri?>(null) }
+//        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+//            imageUri = uri
+//        }
+//        Scaffold(
+//            topBar = { HeaderBar(navController, "Happy Green") },
+//            bottomBar = { BottomNavBar(navController) }
+//        ) { paddingValues ->
+//            Column(
+//                modifier = Modifier
+//                    .padding(paddingValues)
+//                    .verticalScroll(rememberScrollState())
+//                    .fillMaxSize()
+//                    .padding(16.dp),
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                verticalArrangement = Arrangement.Top
+//            ) {
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(8.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Image(
+//                        painter = rememberAsyncImagePainter(
+//                            pic
+//                        ),
+//                        contentDescription = "Profile picture",
+//                        modifier = Modifier
+//                            .size(100.dp)
+//                            .clip(CircleShape)
+//                            .border(2.dp, Color.Gray, CircleShape)
+//                    )
+//
+//                    Spacer(modifier = Modifier.width(16.dp))
+//
+//                    // Dati utente
+//                    Column {
+//                        Text("Username: $usrn.", fontWeight = FontWeight.Bold)
+//                        Text("Punti: $pts")
+//                        Text("Livello: $lvl")
+//                        Text(
+//                            "Registrato il: ${
+//                                (dte as String).substring(
+//                                    0,
+//                                    10
+//                                )
+//                            }"
+//                        )
+//                    }
+//                }
+//
+//                Spacer(modifier = Modifier.height(24.dp))
+//
+//                Button(
+//                    onClick = {
+//                        SecureStorage.clearToken(context)
+//                        navController.navigate("first")
+//                    },
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    Text("Logout")
+//                }
+//
+//                Spacer(modifier = Modifier.height(12.dp))
+//
+//                Button(
+//                    onClick = {
+//                        launcher.launch("image/*")
+//                        coroutineScope.launch {
+//                            val api = RetrofitInstance.api
+//
+//                            if (imageUri != null ) {
+//                                val userData = UserData(
+//                                    Id = id,
+//                                    username = usrn,
+//                                    imageUri = imageUri!!,
+//                                    points = pts,
+//                                    level = lvl
+//                                )
+//
+//                                resultText = updateUser(api, context, userData)
+//
+//
+//                            } else {
+//                                resultText = "Seleziona immagine, posizione e inserisci descrizione."
+//                            }
+//
+//
+//                        }
+//                    },
+//                    modifier = Modifier.align(Alignment.CenterHorizontally)
+//                ) {
+//                    Text("Modifica Immagine Profilo")
+//                }
+//            }
+//        }
+//    }
+}
 
-    Scaffold(
-        topBar = { HeaderBar(navController, "Happy Green") },
-        bottomBar = { BottomNavBar(navController) }
-    ) { paddingValues ->
-        // Main content inside the Scaffold, using Column to organize UI elements vertically
-        Column(
-            modifier = Modifier
-                .padding(paddingValues) // Ensure the content respects Scaffold's padding
-                .verticalScroll(rememberScrollState())
-                .fillMaxSize(), // Make sure the column takes up the available space
+//TODO
+@Composable
+fun UploadPicture(navController: NavHostController){
 
-            horizontalAlignment = Alignment.CenterHorizontally, // Center contents horizontally
-            verticalArrangement = Arrangement.Top // Center contents vertically
-
-        ) {
-            Button(onClick = {
-                SecureStorage.clearToken(context)
-                navController.navigate("first")
-            }
-
-            ) {
-                Text("Logout")
-            }
-        }
-    }
 }
 
 //TODO
