@@ -75,5 +75,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.2.0")
     implementation(libs.accompanist.permissions)
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
 
 }

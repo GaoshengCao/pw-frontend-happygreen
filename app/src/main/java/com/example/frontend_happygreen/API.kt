@@ -10,9 +10,11 @@ import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 
@@ -64,15 +66,7 @@ interface ApiService {
         @Part image: MultipartBody.Part
     ): retrofit2.Response<CreatePostResponse>
 
-    @Multipart
-    @POST("users/")  // adjust path if needed
-    suspend fun updateUser(
-        @Part("username") group: RequestBody?,
-        @Part("points") author: RequestBody?,
-        @Part("level") text: RequestBody,
-        @Part("date_joined") locationLat: RequestBody?,
-        @Part image: MultipartBody.Part
-    ): retrofit2.Response<CreatePostResponse>
+
 
     @GET("quizzes/{id}/")
     suspend fun getQuiz(@Path("id") id: Int): QuizQuestion
@@ -85,6 +79,23 @@ interface ApiService {
 
     @POST("token/refresh/")
     suspend fun refreshToken(@Body refreshRequest: RefreshTokenRequest?): LoginResponse
+
+    @DELETE("memberships/{id}/")
+    suspend fun quitGroup(@Path("id")id: Int): Call<Void>
+
+    @PUT
+
+    @Multipart
+    @POST("users/")  // adjust path if needed
+    suspend fun updateUser(
+        @Part("username") group: RequestBody?,
+        @Part("points") author: RequestBody?,
+        @Part("level") text: RequestBody,
+        @Part("date_joined") locationLat: RequestBody?,
+        @Part image: MultipartBody.Part
+    ): retrofit2.Response<CreatePostResponse>
+
+
 
 
 //Ciao
@@ -230,9 +241,7 @@ data class WasteClassification(
 
 object RetrofitInstance {
     // Sostituiscilo con il tuo API KEY
-
-
-    private const val BASE_URL = "https://2ee8-151-49-200-179.ngrok-free.app//"
+    private const val BASE_URL = "https://2ee8-151-49-200-179.ngrok-free.app/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()

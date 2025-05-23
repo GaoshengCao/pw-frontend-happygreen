@@ -1,9 +1,13 @@
 package com.example.frontend_happygreen
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Location
 import android.net.Uri
 import android.util.Log
 import com.google.android.gms.common.api.Response
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -331,4 +335,29 @@ suspend fun prepareFilePart(context: Context, uri: Uri): MultipartBody.Part {
     val requestBody = inputStream.readBytes().toRequestBody("image/*".toMediaTypeOrNull())
     return MultipartBody.Part.createFormData("image", fileName, requestBody)
 }
+
+@SuppressLint("MissingPermission")
+suspend fun getLastKnownLocation(context: Context): Location? {
+    return try {
+        val fusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationProviderClient.lastLocation.await()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+suspend fun quitGroup(api: ApiService,userId: Int,groupName : String){
+    var groupId = getIDGroup(api,groupName)
+
+    val memberships = api.getMembership()
+
+    for (membership in memberships){
+        if ((membership.user == userId) && (membership.group == groupId)){
+            api.quitGroup(membership.id)
+            return
+        }
+    }
+}
+
 

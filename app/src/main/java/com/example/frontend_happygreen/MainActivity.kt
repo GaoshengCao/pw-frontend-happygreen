@@ -118,6 +118,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -273,7 +274,8 @@ fun SplashScreen(navController: NavController) {
 
     // Image
     Box(contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .background("#4CAF50".toComposeColor())
     ) {
         Image(painter = painterResource(id = R.drawable.logo),
@@ -683,8 +685,8 @@ fun ElementGroup(navController: NavHostController, group: Group){
     Box(modifier = Modifier
         .fillMaxWidth()
         .clickable {
-        navController.navigate("group/${group.name}");
-    },
+            navController.navigate("group/${group.name}");
+        },
     ){
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1016,15 +1018,21 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
     val context = LocalContext.current.applicationContext
     val userId = SecureStorage.getUser(context)
 
-    var risultato by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var members by remember { mutableStateOf<List<User>>(emptyList()) }
     var groupID by remember { mutableStateOf(0) }
+    var userLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
+
     LaunchedEffect(userId) {
         val api = RetrofitInstance.api
-        groupID = getIDGroup(api,nomeGruppo)
+        groupID = getIDGroup(api, nomeGruppo)
         posts = getPostByGroupName(api, nomeGruppo) ?: emptyList()
         members = getMembersByGroupName(api, nomeGruppo)
+
+        val location = getLastKnownLocation(context)
+        userLocation = location?.let {
+            LatLng(it.latitude, it.longitude)
+        } ?: LatLng(0.0, 0.0)
     }
 
     Column(
@@ -1081,6 +1089,12 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
                         )
                     }
                 }
+                Marker(
+                    state = MarkerState(position = userLocation),
+                    title = "Tu sei qui",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                )
+
             }
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -1111,35 +1125,26 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
 
         }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        // Sezione da non toccare
-//                        val api = RetrofitInstance.api
-//                        val id = SecureStorage.getUser(context)
-//                        val responce = joinGroup(api,id,username.toInt())
-//
-//                        val firstWord = responce.split(" ")?.firstOrNull()
-//
-//                        if (firstWord == "Joined"){
-//                            navController.navigate("home")
-//                        }else{
-//                            risultato = responce
-//                        }
-                    }
-                },
-                shape = RoundedCornerShape(5.dp),
-                modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank()
-            ) {
-                Text("Esci Gruppo")
-            }
-
-            Text(risultato, color = Color.White)
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    val api = RetrofitInstance.api
+                    quitGroup(api, SecureStorage.getUser(context), nomeGruppo)
+                }
+                navController.navigate("home")
+            },
+            shape = RoundedCornerShape(5.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.4f)
+                .align(Alignment.CenterHorizontally),
+            enabled = username.isNotBlank()
+        ) {
+            Text("Esci Gruppo")
         }
     }
+}
 
 
 
@@ -1363,7 +1368,7 @@ fun GroupHeaderBar(navController: NavHostController, title: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(99, 169, 177))
-            .clickable { navController.navigate("mapPage/${title}")},
+            .clickable { navController.navigate("mapPage/${title}") },
         actions = {
             IconButton(onClick = {
                 navController.navigate("addPost/${title}")
