@@ -1,7 +1,7 @@
 # HappyGreen Frontend App
 
 <div align="center">
-  <img src=media/img/logo.png alt="HappyGreen Logo" width="150">
+  <img src=app/src/main/res/drawable/logo.png alt="HappyGreen Logo" width="150">
   <h3>Sostenibilità a portata di click</h3>
 </div>
 
