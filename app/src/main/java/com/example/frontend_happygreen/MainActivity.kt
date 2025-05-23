@@ -3,36 +3,26 @@ package com.example.frontend_happygreen
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import android.icu.text.CaseMap.Title
 import android.net.Uri
 import android.os.Bundle
-import android.provider.ContactsContract.CommonDataKinds.Email
-import android.view.WindowInsets
 import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import android.Manifest
 import android.content.pm.PackageManager
-import android.provider.MediaStore.Audio.Genres.Members
-import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -44,16 +34,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -67,8 +53,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -83,31 +67,22 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.traceEventEnd
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -212,8 +187,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             FrontendhappygreenTheme {
                 val navController = rememberNavController()
-                val context = LocalContext.current.applicationContext
-                var page = "splash_screen"
 
 
 
@@ -223,7 +196,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = page,
+                        startDestination = "splash_screen",
                         modifier = Modifier.navigationBarsPadding()
                     ) {
                         composable("splash_screen") { SplashScreen(navController = navController) }
@@ -333,7 +306,7 @@ fun SplashScreen(navController: NavController) {
 //Barra Con Titolo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HeaderBar(navController: NavHostController, title: String) {
+fun HeaderBar(title: String) {
     TopAppBar(
         title = {
             Text(
@@ -676,7 +649,7 @@ fun RegisterPage(navController: NavHostController) {
                         val apiService = RetrofitInstance.api
                         val result = registerUser(apiService, username, password)
 
-                        val firstWord = result?.split(" ")?.firstOrNull()
+                        val firstWord = result.split(" ")?.firstOrNull()
 
                         if (firstWord == "Registered") {
                             val id = getId(apiService, username)
@@ -722,7 +695,6 @@ fun RegisterPage(navController: NavHostController) {
 //
 @Composable
 fun HomePage(navController: NavHostController) {
-    val coroutineScope = rememberCoroutineScope()
     var groups by remember { mutableStateOf<List<Group>?>(emptyList()) }
     val context = LocalContext.current.applicationContext
 
@@ -734,7 +706,7 @@ fun HomePage(navController: NavHostController) {
     }
 
     Scaffold(
-        topBar = { HeaderBar(navController, "Happy Green") },
+        topBar = { HeaderBar("Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         Column(
@@ -983,7 +955,6 @@ fun JoinGroupPage(navController: NavHostController) {
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun GroupPage(navController: NavHostController, nome: String) {
-    val coroutineScope = rememberCoroutineScope()
     var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     val context = LocalContext.current.applicationContext
     val userId = SecureStorage.getUser(context)
@@ -1601,7 +1572,7 @@ fun CommentElement(navController: NavHostController, text: String, author: Int) 
 @Composable
 fun GamePage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController, "Happy Green") },
+        topBar = { HeaderBar("Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
 
@@ -1626,7 +1597,6 @@ fun GamePage(navController: NavHostController) {
 @Composable
 fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
     var currentIndex by remember { mutableStateOf(0) }
-    var selectedAnswer by remember { mutableStateOf<Domanda?>(null) }
     var score by remember { mutableStateOf(0) }
     var domande = remember(currentIndex) { prendiDomande(questions, currentIndex) }
     var questionText = questions[currentIndex].question_text
@@ -1755,12 +1725,11 @@ fun QuizResultPage(score: Int, navController: NavHostController) {
 @Composable
 fun CameraPage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController, "Happy Green") },
+        topBar = { HeaderBar("Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         ScannerScreen(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(top = 5.dp)
                 .padding(paddingValues)
         )
@@ -1770,7 +1739,6 @@ fun CameraPage(navController: NavHostController) {
 @Composable
 fun UserPage(navController: NavHostController) {
     val context = LocalContext.current.applicationContext
-    val coroutineScope = rememberCoroutineScope()
     val id = SecureStorage.getUser(context)
     var utente by remember { mutableStateOf<User?>(null) }
 
@@ -1789,7 +1757,7 @@ fun UserPage(navController: NavHostController) {
         val dateString = (dte as? String)?.take(10) ?: "N/A"
 
         Scaffold(
-            topBar = { HeaderBar(navController, "Happy Green") },
+            topBar = { HeaderBar("Happy Green") },
             bottomBar = { BottomNavBar(navController) }
         ) { paddingValues ->
             Column(
@@ -1941,7 +1909,7 @@ fun UpdatePicture(navController: NavHostController) {
 @Composable
 fun OptionsPage(navController: NavHostController) {
     Scaffold(
-        topBar = { HeaderBar(navController, "Happy Green") },
+        topBar = { HeaderBar("Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
         Box(
