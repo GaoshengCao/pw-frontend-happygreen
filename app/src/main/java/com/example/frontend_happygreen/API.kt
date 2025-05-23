@@ -83,17 +83,17 @@ interface ApiService {
     @DELETE("memberships/{id}/")
     suspend fun quitGroup(@Path("id")id: Int): Call<Void>
 
-    @PUT
+    @PUT("users/{id}/")
+    suspend fun gameUpdateUser(@Path("id")id:Int, @Body user:User ): Call<Void>
 
     @Multipart
-    @POST("users/")  // adjust path if needed
-    suspend fun updateUser(
-        @Part("username") group: RequestBody?,
-        @Part("points") author: RequestBody?,
-        @Part("level") text: RequestBody,
-        @Part("date_joined") locationLat: RequestBody?,
-        @Part image: MultipartBody.Part
-    ): retrofit2.Response<CreatePostResponse>
+    @PUT("users/{id}/")
+    suspend fun updateUserImage(
+        @Path("id") id: Int,
+        @Part("username") username: RequestBody,
+        @Part("password") password: RequestBody,
+        @Part profile_pic: MultipartBody.Part // Make sure this matches the field name!
+    ): retrofit2.Response<UserData>
 
 
 
@@ -122,6 +122,7 @@ data class LoginResponse(
 data class User(
     @SerializedName("id") val id: Int,
     @SerializedName("username") val username: String,
+    @SerializedName("password") val password: String?,
     @SerializedName("profile_pic") val profile_pic: String?,
     @SerializedName("points") val points: Int,
     @SerializedName("level") val level: Int,
@@ -173,11 +174,12 @@ data class PostData(
 
 )
 data class UserData(
-    val Id: Int?,
     val username: String?,
     val imageUri: Uri,
+    val password: String?,
     val points: Int?,
     val level: Int?,
+    val date_joined: String?
 )
 
 data class Comment(
@@ -187,7 +189,6 @@ data class Comment(
     @SerializedName("text") val text: String?,
     @SerializedName("created_at") val created_at: String?
 )
-
 data class NewComment(
     @SerializedName("post") val post: Int,
     @SerializedName("author") val author: Int,
@@ -203,14 +204,12 @@ data class ScannedObject(
     @SerializedName("location_lat") val location_lat: Double?,
     @SerializedName("location_lng") val location_lng: Double?
 )
-
 data class QuizQuestion(
     @SerializedName("id") val id: Int,
     @SerializedName("question_text") val question_text: String,
     @SerializedName("correct_answer") val correct_answer: String,
     @SerializedName("wrong_answers") val wrong_answers: List<String>
 )
-
 data class Badge(
     @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String?,

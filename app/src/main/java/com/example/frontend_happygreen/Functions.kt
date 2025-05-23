@@ -164,46 +164,6 @@ suspend fun createPost(api: ApiService, context: Context, newPostData: PostData)
     }
 }
 
-//suspend fun updateUser(api: ApiService, context: Context, newUserData: UserData): String {
-//    return try {
-//        // Helper to convert nullable Int to RequestBody or null
-//        fun intToRequestBody(value: Int?): RequestBody? =
-//            value?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
-//
-//        val userId = intToRequestBody(newUserData.Id)
-//        val username = newUserData.username.toRequestBody("text/plain".toMediaTypeOrNull())
-//        val latPart = newUserData.locationLat?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
-//        val lngPart = newUserData.locationLng?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
-//
-//        // Convert Uri to MultipartBody.Part
-//        val contentResolver = context.contentResolver
-//        val inputStream: InputStream? = contentResolver.openInputStream(newUserData.imageUri)
-//        if (inputStream == null) return "Failed to read image from Uri"
-//
-//        val tempFile = File.createTempFile("upload", ".jpg", context.cacheDir)
-//        tempFile.outputStream().use { outputStream ->
-//            inputStream.copyTo(outputStream)
-//        }
-//
-//        val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
-//        val imagePart = MultipartBody.Part.createFormData("image", tempFile.name, requestFile)
-//
-//        // Call API
-//        val response = api.createPost(groupPart, authorPart, textPart, latPart, lngPart, imagePart)
-//
-//        // Clean up temp file
-//        tempFile.delete()
-//
-//        if (response.isSuccessful) {
-//            "Post created successfully! ID: ${response.body()?.postId ?: "unknown"}"
-//        } else {
-//            "Post creation failed: ${response.errorBody()?.string()}"
-//        }
-//    } catch (e: Exception) {
-//        "Error creating post: ${e.message}" //Ciao
-//    }
-//}
-
 suspend fun getPostByGroupName(api: ApiService,nomeGruppo : String): List<Post>?{
     val groupID = getIDGroup(api,nomeGruppo)
     val resultPosts = mutableListOf<Post>()
@@ -327,15 +287,6 @@ suspend fun getFiveQuizQuestion(api: ApiService): List<QuizQuestion> {
     return resultQuiz
 }
 
-suspend fun prepareFilePart(context: Context, uri: Uri): MultipartBody.Part {
-    val contentResolver = context.contentResolver
-    val inputStream = contentResolver.openInputStream(uri)!!
-    val fileName = "profile_pic.jpg"
-
-    val requestBody = inputStream.readBytes().toRequestBody("image/*".toMediaTypeOrNull())
-    return MultipartBody.Part.createFormData("image", fileName, requestBody)
-}
-
 @SuppressLint("MissingPermission")
 suspend fun getLastKnownLocation(context: Context): Location? {
     return try {
@@ -359,5 +310,51 @@ suspend fun quitGroup(api: ApiService,userId: Int,groupName : String){
         }
     }
 }
+
+suspend fun caricaPunteggio(api: ApiService,userId: Int,password: String,point:Int){
+    // Point è un read Only, non possiamo aggiornalo.
+//    var user = api.getUser(userId)
+//    user.points += point
+//    if (user.points >= 10){
+//        user.points -= 10
+//        user.level += 1
+//    }
+//    user.password = password
+//    api.gameUpdateUser(userId,user)
+
+}
+
+suspend fun caricaImmagineProfilo(api: ApiService, userId: Int,password: String, context: Context, user: UserData) {
+    try {
+        val userdat = api.getUser(userId)
+        val username = userdat.username.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
+        val password = password.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
+        if (username == null || password == null) throw IllegalArgumentException("Username and password are required")
+
+        val inputStream = context.contentResolver.openInputStream(user.imageUri)
+            ?: throw IllegalArgumentException("Image Uri is invalid")
+
+        val tempFile = File.createTempFile("upload", ".jpg", context.cacheDir)
+        tempFile.outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
+
+        val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+        val imagePart = MultipartBody.Part.createFormData("profile_pic", tempFile.name, requestFile)
+
+        val response = api.updateUserImage(userId, username, password, imagePart)
+
+        tempFile.delete()
+
+        if (response.isSuccessful) {
+            Log.d("Upload", "Success!")
+        } else {
+            Log.e("Upload", "Failed: ${response.errorBody()?.string()}")
+        }
+
+    } catch (e: Exception) {
+        Log.e("Upload", "Error: ${e.message}")
+    }
+}
+
+
 
 

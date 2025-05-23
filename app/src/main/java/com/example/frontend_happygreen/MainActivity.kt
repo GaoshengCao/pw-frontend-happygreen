@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -56,7 +57,9 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -74,6 +77,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -155,25 +159,41 @@ object SecureStorage {
             .putString("auth_token", token)
             .apply()
     }
-    fun saveUser(context: Context, id : Int) {
+
+    fun saveUser(context: Context, id: Int) {
         getSharedPrefs(context)
             .edit()
             .putInt("User_ID", id)
             .apply()
     }
 
+    fun savePassword(context: Context, password: String?) {
+        getSharedPrefs(context)
+            .edit()
+            .putString("password", password)
+            .apply()
+    }
+
     fun getToken(context: Context): String? {
         return getSharedPrefs(context).getString("auth_token", null)
     }
+
     fun getUser(context: Context): Int {
         return getSharedPrefs(context).getInt("User_ID", 0)
+    }
+    fun getPassword(context: Context): String? {
+        return getSharedPrefs(context).getString("password", null)
     }
 
     fun clearToken(context: Context) {
         getSharedPrefs(context).edit().remove("auth_token").apply()
     }
+
     fun clearUser(context: Context) {
         getSharedPrefs(context).edit().remove("User_ID").apply()
+    }
+    fun clearPassword(context: Context) {
+        getSharedPrefs(context).edit().remove("password").apply()
     }
 }
 
@@ -190,30 +210,33 @@ class MainActivity : ComponentActivity() {
 
 
 
-                Surface (modifier = Modifier.fillMaxSize()
-                ){
+                Surface(
+                    modifier = Modifier.fillMaxSize()
+                ) {
                     NavHost(
                         navController = navController,
                         startDestination = page,
                         modifier = Modifier.navigationBarsPadding()
                     ) {
                         composable("splash_screen") { SplashScreen(navController = navController) }
-                        composable("first"){ FirstPage((navController))} // 1
-                        composable("login"){ LoginPage((navController)) } // 2
-                        composable("register"){ RegisterPage((navController))} // 3
+                        composable("first") { FirstPage((navController)) } // 1
+                        composable("login") { LoginPage((navController)) } // 2
+                        composable("register") { RegisterPage((navController)) } // 3
                         composable("home") { HomePage(navController) } // 4
-                        composable("createGroup"){ CreateGroupPage((navController))} // 5
-                        composable("enterGroup"){ JoinGroupPage((navController))} // 6
-                        composable("mapPage/{name}"){ backStackEntry ->
+                        composable("createGroup") { CreateGroupPage((navController)) } // 5
+                        composable("enterGroup") { JoinGroupPage((navController)) } // 6
+                        composable("mapPage/{name}") { backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
-                            GroupMapPage(navController,name)
+                            GroupMapPage(navController, name)
                         } // 8
-                        composable("group/{name}"){ backStackEntry ->
+                        composable("group/{name}") { backStackEntry ->
                             val name = backStackEntry.arguments?.getString("name") ?: "???"
-                        GroupPage(navController,name)} // 7
-                       composable("addPost/{name}"){ backStackEntry ->
-                           val name = backStackEntry.arguments?.getString("name") ?: "???"
-                           AddPostPage(navController,name)} // 9
+                            GroupPage(navController, name)
+                        } // 7
+                        composable("addPost/{name}") { backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name") ?: "???"
+                            AddPostPage(navController, name)
+                        } // 9
                         composable(
                             "comment/{id}",
                             arguments = listOf(navArgument("id") {
@@ -224,19 +247,31 @@ class MainActivity : ComponentActivity() {
                             CommentPage(navController, id)
                         } // 10
                         composable("game") { GamePage(navController) }
-                        composable("quizpage"){
-                            val coroutineScope = rememberCoroutineScope()
-                            var quiz by remember { mutableStateOf<List<QuizQuestion>>(emptyList()) }
-                            coroutineScope.launch {
+                        composable("quizpage") {
+                            val quizState = produceState<List<QuizQuestion>>(initialValue = emptyList()) {
                                 val api = RetrofitInstance.api
-                                quiz = getFiveQuizQuestion(api)
+                                value = getFiveQuizQuestion(api)
                             }
-                            QuizPage(navController,quiz)}
+
+                            if (quizState.value.isNotEmpty()) {
+                                QuizPage(navController, quizState.value)
+                            } else {
+                                // You can show a loading indicator while the data is fetched
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
+
                         composable("resultpage/{result}") { backStackEntry ->
-                            val result = backStackEntry.arguments?.getString("result")?.toIntOrNull() ?: -1
+                            val result =
+                                backStackEntry.arguments?.getString("result")?.toIntOrNull() ?: -1
                             QuizResultPage(result, navController)
                         }
                         composable("camera") { CameraPage(navController) }
+                        composable("updatePicture") { UpdatePicture(navController) }
+
+
                         composable("user") { UserPage(navController) }
                         composable("options") { OptionsPage(navController) }
                     }
@@ -264,30 +299,33 @@ fun SplashScreen(navController: NavController) {
                 })
         )
         delay(3000L)
-        if (SecureStorage.getToken(context) == null){
+        if (SecureStorage.getToken(context) == null) {
             navController.navigate("first")
-        }else{
+        } else {
             navController.navigate("home")
         }
 
     }
 
     // Image
-    Box(contentAlignment = Alignment.Center,
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
             .background("#4CAF50".toComposeColor())
     ) {
-        Image(painter = painterResource(id = R.drawable.logo),
+        Image(
+            painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo",
-            modifier = Modifier.scale(scale.value))
+            modifier = Modifier.scale(scale.value)
+        )
     }
 }
 
 //Barra Con Titolo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HeaderBar(navController: NavHostController, title:String) {
+fun HeaderBar(navController: NavHostController, title: String) {
     TopAppBar(
         title = {
             Text(
@@ -334,7 +372,12 @@ fun BottomNavBar(navController: NavHostController) {
 
 //Singoli Bottooni In Basso
 @Composable
-fun NavBarButton(destination: String, iconResId: Int, label: String, navController: NavHostController) {
+fun NavBarButton(
+    destination: String,
+    iconResId: Int,
+    label: String,
+    navController: NavHostController
+) {
     Button(
         onClick = { navController.navigate(destination) },
         shape = RoundedCornerShape(5.dp),
@@ -342,7 +385,7 @@ fun NavBarButton(destination: String, iconResId: Int, label: String, navControll
             .padding(1.dp)
             .background(Color(99, 169, 177)),
 
-    ) {
+        ) {
         Image(
             painter = painterResource(iconResId),
             contentDescription = label,
@@ -383,7 +426,11 @@ fun FirstPage(navController: NavHostController) {
             title = {},
             navigationIcon = {
                 IconButton(onClick = {}, enabled = false) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Transparent)
+                    Icon(
+                        Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.Transparent
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -501,9 +548,11 @@ fun LoginPage(navController: NavHostController) {
                     coroutineScope.launch {
                         val api = RetrofitInstance.api
                         val apiToken = loginUser(api, username, password)
+                        val id = getId(api, username)
                         SecureStorage.saveToken(context, apiToken)
-                        val id = getId(api,username)
-                        SecureStorage.saveUser(context,id)
+                        SecureStorage.saveUser(context, id)
+                        SecureStorage.savePassword(context, password)
+
                         navController.navigate("home")
                     }
                 },
@@ -607,9 +656,14 @@ fun RegisterPage(navController: NavHostController) {
 
                         if (firstWord == "Registered") {
                             // Success
-                            val id = getId(apiService,username)
-                            SecureStorage.saveUser(context,id)
-                            SecureStorage.saveToken(context, loginUser(apiService, username, password))
+                            val id = getId(apiService, username)
+                            SecureStorage.saveUser(context, id)
+                            SecureStorage.savePassword(context, password)
+
+                            SecureStorage.saveToken(
+                                context,
+                                loginUser(apiService, username, password)
+                            )
                             navController.navigate("home")
                         } else {
                             risultato = "Registrazione Fallita, Nome Utente Già Esistente"
@@ -681,18 +735,19 @@ fun HomePage(navController: NavHostController) {
 }
 
 @Composable
-fun ElementGroup(navController: NavHostController, group: Group){
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .clickable {
-            navController.navigate("group/${group.name}");
-        },
-    ){
+fun ElementGroup(navController: NavHostController, group: Group) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                navController.navigate("group/${group.name}");
+            },
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             Text(
                 text = group.name,
                 style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
@@ -770,14 +825,14 @@ fun CreateGroupPage(navController: NavHostController) {
 
                         val api = RetrofitInstance.api
                         val id = SecureStorage.getUser(context)
-                        val responce = createGroup(api,id,username)
+                        val responce = createGroup(api, id, username)
 
 
                         val firstWord = responce.split(" ")?.firstOrNull()
 
-                        if (firstWord == "Created"){
+                        if (firstWord == "Created") {
                             navController.navigate("home")
-                        }else{
+                        } else {
                             risultato = responce
                         }
                     }
@@ -861,13 +916,13 @@ fun JoinGroupPage(navController: NavHostController) {
 
                         val api = RetrofitInstance.api
                         val id = SecureStorage.getUser(context)
-                        val responce = joinGroup(api,id,username.toInt())
+                        val responce = joinGroup(api, id, username.toInt())
 
                         val firstWord = responce.split(" ")?.firstOrNull()
 
-                        if (firstWord == "Joined"){
+                        if (firstWord == "Joined") {
                             navController.navigate("home")
-                        }else{
+                        } else {
                             risultato = responce
                         }
                     }
@@ -1007,6 +1062,7 @@ fun ElementPost(navController: NavHostController, post: Post) {
         }
     }
 }
+
 //
 // 8(MapPage)
 //
@@ -1021,7 +1077,7 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
     var username by remember { mutableStateOf("") }
     var members by remember { mutableStateOf<List<User>>(emptyList()) }
     var groupID by remember { mutableStateOf(0) }
-    var userLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
+    var userLocation by remember { mutableStateOf(LatLng(41.8967, 12.4822)) }
 
     LaunchedEffect(userId) {
         val api = RetrofitInstance.api
@@ -1120,6 +1176,13 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
                             .padding(8.dp),
                         color = Color.White
                     )
+                    Divider(
+                            color = Color.LightGray,
+                    thickness = 1.dp,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .fillMaxWidth()
+                    )
                 }
             }
 
@@ -1139,13 +1202,11 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
             modifier = Modifier
                 .fillMaxWidth(0.4f)
                 .align(Alignment.CenterHorizontally),
-            enabled = username.isNotBlank()
         ) {
             Text("Esci Gruppo")
         }
     }
 }
-
 
 
 //
@@ -1154,7 +1215,7 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddPostPage(navController: NavHostController, groupName: String) {
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
     val coroutineScope = rememberCoroutineScope()
 
     var description by remember { mutableStateOf("") }
@@ -1315,7 +1376,10 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
 
                     if (imageUri != null && location != null && description.isNotBlank()) {
                         val postData = PostData(
-                            groupId = getIDGroup(api,groupName),       // pass actual group ID if available
+                            groupId = getIDGroup(
+                                api,
+                                groupName
+                            ),       // pass actual group ID if available
                             authorId = SecureStorage.getUser(context),      // pass actual user ID if available
                             text = description,
                             locationLat = location?.latitude,
@@ -1324,6 +1388,7 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
                         )
 
                         resultText = createPost(api, context, postData)
+                        navController.navigate("group/${groupName}")
 
 
                     } else {
@@ -1342,18 +1407,9 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
         ) {
             Text("Crea Post")
         }
-
-        Text(
-            text = resultText,
-            color = Color.White,
-            modifier = Modifier.padding(16.dp)
-        )
     }
 }
 
-
-
-//TODO NAVIGAZIONE ALTRE PAGINE
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupHeaderBar(navController: NavHostController, title: String) {
@@ -1428,7 +1484,11 @@ fun CommentPage(navController: NavHostController, postId: Int) {
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -1447,10 +1507,19 @@ fun CommentPage(navController: NavHostController, postId: Int) {
             )
             Text("Posizione: ($lat, $lng)", color = Color.White, modifier = Modifier.padding(8.dp))
 
-            Divider(color = Color.White, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+            Divider(
+                color = Color.White,
+                thickness = 1.dp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
 
             // Comments Section
-            Text("Commenti:", color = Color.White, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
+            Text(
+                "Commenti:",
+                color = Color.White,
+                fontSize = 20.sp,
+                modifier = Modifier.padding(start = 8.dp)
+            )
 
             comments.forEach { comment ->
                 CommentElement(navController, comment.text.toString(), comment.author)
@@ -1540,7 +1609,7 @@ fun GamePage(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Button(onClick = { navController.navigate("quiz") }) {
+            Button(onClick = { navController.navigate("quizpage") }) {
                 Text("Inizia Quiz")
             }
         }
@@ -1550,100 +1619,108 @@ fun GamePage(navController: NavHostController) {
 @Composable
 fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
     var currentIndex by remember { mutableStateOf(0) }
-    var selectedAnswer by remember { mutableStateOf<String?>(null) }
-    var showNextButton by remember { mutableStateOf(false) }
-    var shuffledAnswers by remember { mutableStateOf(listOf<String>()) }
+    var selectedAnswer by remember { mutableStateOf<Domanda?>(null) }
     var score by remember { mutableStateOf(0) }
+    var domande = remember(currentIndex) { prendiDomande(questions, currentIndex) }
+    var questionText = questions[currentIndex].question_text
+    var enableNext by remember { mutableStateOf(false) }
+    var quizComopletato by remember { mutableStateOf(false) }
 
-    if (questions.isNotEmpty()) {
-        val currentQuestion = questions.getOrNull(currentIndex)
+    var risposta by remember { mutableStateOf(true) }
+    var backgroundColor by remember { mutableStateOf(Color.Gray) }
 
-        LaunchedEffect(currentQuestion?.question_text) {
-            currentQuestion?.let {
-                selectedAnswer = null
-                showNextButton = false
-                shuffledAnswers = (it.wrong_answers + it.correct_answer).shuffled()
-            }
-        }
-
-        currentQuestion?.let { question ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Domanda ${currentIndex + 1}/${questions.size}",
-                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                Text(
-                    text = question.question_text,
-                    style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                shuffledAnswers.forEach { answer ->
-                    val isSelected = selectedAnswer == answer
-                    val backgroundColor = when {
-                        !showNextButton -> Color.LightGray
-                        answer == question.correct_answer -> Color(0xFFAAF683)
-                        isSelected && answer != question.correct_answer -> Color(0xFFFF686B)
-                        else -> Color.LightGray
-                    }
-
-                    Button(
-                        onClick = {
-                            if (selectedAnswer == null) {
-                                selectedAnswer = answer
-                                showNextButton = true
-                                if (answer == question.correct_answer) {
-                                    score++
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
-                        enabled = selectedAnswer == null
-                    ) {
-                        Text(answer)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (showNextButton) {
-                    Button(
-                        onClick = {
-                            if (currentIndex < questions.lastIndex) {
-                                currentIndex++
-                            } else {
-                                navController.navigate("resultpage/$score")
-                            }
-                        }
-                    ) {
-                        Text(if (currentIndex < questions.lastIndex) "Next" else "Finish")
-                    }
-                }
-            }
-        }
-    } else {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .widthIn(max = 600.dp), // optional: limits width on larger screens
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Caricamento domande...")
+            Text(
+                text = "Domanda ${currentIndex + 1}/${questions.size}",
+                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Text(
+                text = questionText,
+                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            domande.forEach { answer ->
+                Button(
+                    onClick = {
+                        if (answer.correct == true) {
+                            score++
+                            backgroundColor = Color.Green
+                        } else {
+                            backgroundColor = Color.Red
+                        }
+                        enableNext = true
+                        risposta = false
+                    },
+                    enabled = risposta,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = ButtonColors(Color.Gray,Color.Black,backgroundColor,Color.Black
+                    )
+                ) {
+                    Text(answer.text)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (currentIndex < questions.lastIndex) {
+                        currentIndex++
+                        domande = prendiDomande(questions, currentIndex)
+                        questionText = questions[currentIndex].question_text
+                        enableNext = false
+                        backgroundColor = Color.Gray
+                        risposta = true
+                    } else {
+                        quizComopletato = true
+                    }
+                },
+                enabled = enableNext,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+            ) {
+                Text("Next Question")
+            }
+
+            Button(
+                onClick = {
+                    navController.navigate("resultpage/$score")
+                },
+                enabled = quizComopletato,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+                Text("Finish")
+            }
         }
     }
 }
 
+
+
 @Composable
 fun QuizResultPage(score: Int, navController: NavHostController) {
+    val context = LocalContext.current.applicationContext
+    val coroutineScope = rememberCoroutineScope()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1653,14 +1730,14 @@ fun QuizResultPage(score: Int, navController: NavHostController) {
     ) {
         Text("Hai totalizzato $score su 5!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
-        Button(onClick = { navController.navigate("game") }) {
+        Button(onClick ={
+
+            navController.navigate("game")
+        }) {
             Text("Torna Schemata Giochi")
         }
     }
 }
-
-
-
 
 //TODO
 @Composable
@@ -1675,138 +1752,190 @@ fun CameraPage(navController: NavHostController) {
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            Button(onClick = {navController.navigate("quizpage")}) { Text("Ciaone") }
+            Button(onClick = { navController.navigate("quizpage") }) { Text("Ciaone") }
         }
     }
 }
 
-//TODO
 @Composable
 fun UserPage(navController: NavHostController) {
-//    val context = LocalContext.current.applicationContext
-//    val coroutineScope = rememberCoroutineScope()
-//    val id = SecureStorage.getUser(context)
-//    var utente by remember { mutableStateOf<User?>(null) }
-//
-//    LaunchedEffect(id) {
-//        val api = RetrofitInstance.api
-//        utente = api.getUser(id)
-//    }
-//
-//    utente?.let { currentUser ->
-//        val usrn = currentUser.username
-//        val pic = utente!!.profile_pic?.replaceFirst("http://", "https://") ?: "https://stock.adobe.com/search/images?k=default+user"
-//        val pts = currentUser.points ?: 0
-//        val lvl = currentUser.level ?: 0
-//        val dte = currentUser.date_joined ?: null
-//        var resultText by remember { mutableStateOf("") }
-//        var imageUri by remember { mutableStateOf<Uri?>(null) }
-//        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-//            imageUri = uri
-//        }
-//        Scaffold(
-//            topBar = { HeaderBar(navController, "Happy Green") },
-//            bottomBar = { BottomNavBar(navController) }
-//        ) { paddingValues ->
-//            Column(
-//                modifier = Modifier
-//                    .padding(paddingValues)
-//                    .verticalScroll(rememberScrollState())
-//                    .fillMaxSize()
-//                    .padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Top
-//            ) {
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(8.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Image(
-//                        painter = rememberAsyncImagePainter(
-//                            pic
-//                        ),
-//                        contentDescription = "Profile picture",
-//                        modifier = Modifier
-//                            .size(100.dp)
-//                            .clip(CircleShape)
-//                            .border(2.dp, Color.Gray, CircleShape)
-//                    )
-//
-//                    Spacer(modifier = Modifier.width(16.dp))
-//
-//                    // Dati utente
-//                    Column {
-//                        Text("Username: $usrn.", fontWeight = FontWeight.Bold)
-//                        Text("Punti: $pts")
-//                        Text("Livello: $lvl")
-//                        Text(
-//                            "Registrato il: ${
-//                                (dte as String).substring(
-//                                    0,
-//                                    10
-//                                )
-//                            }"
-//                        )
-//                    }
-//                }
-//
-//                Spacer(modifier = Modifier.height(24.dp))
-//
-//                Button(
-//                    onClick = {
-//                        SecureStorage.clearToken(context)
-//                        navController.navigate("first")
-//                    },
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    Text("Logout")
-//                }
-//
-//                Spacer(modifier = Modifier.height(12.dp))
-//
-//                Button(
-//                    onClick = {
-//                        launcher.launch("image/*")
-//                        coroutineScope.launch {
-//                            val api = RetrofitInstance.api
-//
-//                            if (imageUri != null ) {
-//                                val userData = UserData(
-//                                    Id = id,
-//                                    username = usrn,
-//                                    imageUri = imageUri!!,
-//                                    points = pts,
-//                                    level = lvl
-//                                )
-//
-//                                resultText = updateUser(api, context, userData)
-//
-//
-//                            } else {
-//                                resultText = "Seleziona immagine, posizione e inserisci descrizione."
-//                            }
-//
-//
-//                        }
-//                    },
-//                    modifier = Modifier.align(Alignment.CenterHorizontally)
-//                ) {
-//                    Text("Modifica Immagine Profilo")
-//                }
-//            }
-//        }
-//    }
+    val context = LocalContext.current.applicationContext
+    val coroutineScope = rememberCoroutineScope()
+    val id = SecureStorage.getUser(context)
+    var utente by remember { mutableStateOf<User?>(null) }
+
+    LaunchedEffect(id) {
+        val api = RetrofitInstance.api
+        utente = api.getUser(id)
+    }
+
+    utente?.let { currentUser ->
+        val usrn = currentUser.username
+        val pic = utente!!.profile_pic?.replaceFirst("http://", "https://")
+            ?: "https://stock.adobe.com/search/images?k=default+user"
+        val pts = currentUser.points ?: 0
+        val lvl = currentUser.level ?: 0
+        val dte = currentUser.date_joined ?: null
+        var resultText by remember { mutableStateOf("") }
+        var imageUri by remember { mutableStateOf<Uri?>(null) }
+        val launcher =
+            rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                imageUri = uri
+            }
+        Scaffold(
+            topBar = { HeaderBar(navController, "Happy Green") },
+            bottomBar = { BottomNavBar(navController) }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            pic
+                        ),
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Gray, CircleShape)
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Dati utente
+                    Column {
+                        Text("Username: $usrn.", fontWeight = FontWeight.Bold)
+                        Text("Punti: $pts")
+                        Text("Livello: $lvl")
+                        Text(
+                            "Registrato il: ${
+                                (dte as String).substring(
+                                    0,
+                                    10
+                                )
+                            }"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        SecureStorage.clearToken(context)
+                        navController.navigate("first")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Logout")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = { navController.navigate("updatePicture") },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Cambia immagine Profilo")
+                }
+            }
+        }
+    }
 }
 
-//TODO
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UploadPicture(navController: NavHostController){
+fun UpdatePicture(navController: NavHostController) {
+    val context = LocalContext.current.applicationContext
+    val coroutineScope = rememberCoroutineScope()
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        imageUri = uri
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(79, 149, 157))
+            .verticalScroll(rememberScrollState())
+    ) {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { launcher.launch("image/*") },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Seleziona Immagine")
+        }
+
+        imageUri?.let {
+            Image(
+                painter = rememberAsyncImagePainter(it),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .height(200.dp)
+                    .fillMaxWidth(),
+                contentScale = ContentScale.Fit
+            )
+        }
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    val userID = SecureStorage.getUser(context)
+                    val password = SecureStorage.getPassword(context).toString()
+                    val api = RetrofitInstance.api
+                    val user = api.getUser(userID)
+
+                    val userData = UserData(
+                        username = user.username,
+                        imageUri = imageUri!!,
+                        password = user.password,
+                        points = user.points,
+                        level = user.level,
+                        date_joined = user.date_joined
+                    )
+
+                    caricaImmagineProfilo(api, userID, password, context, userData)
+                    navController.navigate("user")
+                }
+            },
+            enabled = imageUri != null,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (imageUri != null) MaterialTheme.colorScheme.primary else Color.Gray
+            )
+        ) {
+            Text("Conferma")
+        }
+    }
 }
 
-//TODO
+
 @Composable
 fun OptionsPage(navController: NavHostController) {
     Scaffold(
@@ -1832,7 +1961,6 @@ fun OptionsPage(navController: NavHostController) {
 }
 
 
-
 //Semplici Bottoni di Navigazione
 @Composable
 fun NavigationButton(text: String, destination: String, navController: NavHostController) {
@@ -1845,4 +1973,24 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
     }
 }
 
+data class Question(
+    var correct : Boolean,
+    var text : String
+)
 
+fun prendiDomande(questions: List<QuizQuestion>, indice : Int): List<Question>{
+    var lista = mutableListOf<Question>()
+
+    lista.add(Question(true,questions[indice].correct_answer))
+    lista.add(Question(false,questions[indice].wrong_answers[0]))
+    lista.add(Question(false,questions[indice].wrong_answers[1]))
+    lista.add(Question(false,questions[indice].wrong_answers[2]))
+
+    lista.shuffle()
+    return lista
+}
+
+data class Domanda(
+    val text: String,
+    val correct: Boolean
+)
