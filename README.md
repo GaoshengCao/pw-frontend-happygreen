@@ -66,22 +66,22 @@ Il frontend supporta le seguenti funzionalità:
 
 ## 📁 Struttura del Progetto
 
-``` SplashScreen ```      → schermata di avvio con animazione
-``` FirstPage ```         → scelta tra login o registrazione
-``` LoginPage ```         → autenticazione utente
-``` RegisterPage ```      → registrazione nuovo utente
-``` HomePage ```          → elenco gruppi e navigazione
-``` CreateGroupPage ```   → creazione nuovi gruppi
-``` JoinGroupPage ```     → partecipazione a gruppi esistenti
-``` GroupPage ```         → visualizzazione post del gruppo
-``` AddPostPage ```       → aggiunta post con immagine e posizione
-``` CommentPage ```       → sezione commenti ad un post
-``` GamePage ```          → schermata iniziale dei giochi
-``` QuizPage ```          → quiz educativi
-``` QuizResultPage ```    → risultati dei quiz
-``` CameraPage ```        → scanner oggetti eco (in lavorazione)
-``` UserPage ```          → profilo utente (in sviluppo)
-``` OptionsPage ```       → pagina extra o placeholder
+- ``` SplashScreen ```      → schermata di avvio con animazione
+- ``` FirstPage ```         → scelta tra login o registrazione
+- ``` LoginPage ```         → autenticazione utente
+- ``` RegisterPage ```      → registrazione nuovo utente
+- ``` HomePage ```          → elenco gruppi e navigazione
+- ``` CreateGroupPage ```   → creazione nuovi gruppi
+- ``` JoinGroupPage ```     → partecipazione a gruppi esistenti
+- ``` GroupPage ```         → visualizzazione post del gruppo
+- ``` AddPostPage ```       → aggiunta post con immagine e posizione
+- ``` CommentPage ```       → sezione commenti ad un post
+- ``` GamePage ```          → schermata iniziale dei giochi
+- ``` QuizPage ```          → quiz educativi
+- ``` QuizResultPage ```    → risultati dei quiz
+- ``` CameraPage ```        → scanner oggetti eco (in lavorazione)
+- ``` UserPage ```          → profilo utente (in sviluppo)
+- ``` OptionsPage ```       → pagina extra o placeholder
 
 ## 🛠 Tecnologie Utilizzate
 
