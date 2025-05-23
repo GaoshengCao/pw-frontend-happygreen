@@ -27,20 +27,20 @@ Il progetto è stato realizzato come parte del corso TPSIT (Tecnologie e Progett
 
 Il frontend supporta le seguenti funzionalità:
 
-- 👤 **Autenticazione**: Registrazione e autenticazione tramite JWT
-- 👥 **Scanner ambientale**: Uso di machine learning per capire l'ambiente circostante
+- 🔒 **Autenticazione**: Registrazione e autenticazione tramite JWT
+- 📷 **Scanner ambientale**: Uso di machine learning per capire l'ambiente circostante
 - 📱 **Condivisione Contenuti**: Post e commenti per condividere esperienze 
-- 📷 **Quiz e giochi educativi**: Quiz educativi sulla sostenibilità con sistema di punteggio
-- ❓ **Creazione e partecipazione a gruppi**: Interazione sociale tra amici grazie ai gruppi
-- 🏆 **Post con geolocalizzazione e immagini**: Possibilità di vedere dove sono gli amici
-- ♻️ **Profilo utente con punti e livello**: Punti e livelli per alimentare l'interazione con l'app
+- 🏆 **Quiz e giochi educativi**: Quiz educativi sulla sostenibilità con sistema di punteggio
+- 👥 **Creazione e partecipazione a gruppi**: Interazione sociale tra amici grazie ai gruppi
+- 📍 **Post con geolocalizzazione e immagini**: Possibilità di vedere dove sono gli amici
+- 🎮 **Profilo utente con punti e livello**: Punti e livelli per alimentare l'interazione con l'app
 
 ## 💻 Requisiti di Sistema
 
 - Android Studio
 - Dispositivo / Emulatore Android (API 24+)
 - Connessione ad internet
-- Amici
+- Amici (facoltativo)
 
 ## 🚀 Installazione
 
@@ -58,7 +58,7 @@ Il frontend supporta le seguenti funzionalità:
 
 ### Telefono
 
-1. Scarica il file ```text .apk ```
+1. Scarica il file ```.apk ```
 
 2. Clicca sul file per installarlo
 
