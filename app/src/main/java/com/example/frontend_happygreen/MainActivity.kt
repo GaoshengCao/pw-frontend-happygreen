@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,6 +65,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -116,6 +118,7 @@ import androidx.navigation.navArgument
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import coil.compose.rememberAsyncImagePainter
+import com.example.frontend_happygreen.ui.theme.AzzurroChiaro2
 import com.example.frontend_happygreen.ui.theme.FrontendhappygreenTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -134,6 +137,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color as ComposeColor
+import com.example.frontend_happygreen.ui.theme.VerdeNatura
+import com.example.frontend_happygreen.ui.theme.GialloSolare
+import com.example.frontend_happygreen.ui.theme.BiancoSporco
+import androidx.compose.material3.TextFieldDefaults
 
 fun String.toComposeColor(): ComposeColor = ComposeColor(AndroidColor.parseColor(this))
 
@@ -211,7 +218,8 @@ class MainActivity : ComponentActivity() {
 
 
                 Surface(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                            color = Color(0xFF4CAF50)
                 ) {
                     NavHost(
                         navController = navController,
@@ -334,25 +342,26 @@ fun HeaderBar(navController: NavHostController, title: String) {
                 fontWeight = FontWeight.Black
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(99, 169, 177)),
+        modifier = Modifier.fillMaxWidth(),
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary
-
+            containerColor = VerdeNatura, // Colore principale (verde)
+            titleContentColor = Color.White // Testo leggibile sul verde
         )
     )
 }
 
+
 //Barra Di Navgazione
 @Composable
 fun BottomNavBar(navController: NavHostController) {
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(Color(99, 169, 177)),
+            .background(VerdeNatura),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -365,48 +374,48 @@ fun BottomNavBar(navController: NavHostController) {
         )
 
         navItems.forEach { (destination, icon, label) ->
-            NavBarButton(destination, icon, label, navController)
+            val selected = currentRoute?.startsWith(destination) == true
+            NavBarButton(destination, icon, label, navController, selected)
         }
     }
 }
 
-//Singoli Bottooni In Basso
 @Composable
 fun NavBarButton(
     destination: String,
     iconResId: Int,
     label: String,
-    navController: NavHostController
+    navController: NavHostController,
+    selected: Boolean = false
 ) {
-    Button(
-        onClick = { navController.navigate(destination) },
-        shape = RoundedCornerShape(5.dp),
-        modifier = Modifier
-            .padding(1.dp)
-            .background(Color(99, 169, 177)),
+    val bgColor = if (selected) GialloSolare else AzzurroChiaro2
+    val contentColor = if (selected) Color.Black else BiancoSporco.copy(alpha = 0.8f)
 
-        ) {
+    Button(
+        onClick = {
+            if (destination != navController.currentBackStackEntry?.destination?.route) {
+                navController.navigate(destination) {
+                    launchSingleTop = true
+                    restoreState = true
+                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                }
+            }
+        },
+        shape = RoundedCornerShape(5.dp),
+        modifier = Modifier.padding(2.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = bgColor,
+            contentColor = contentColor
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+    ) {
         Image(
             painter = painterResource(iconResId),
             contentDescription = label,
             modifier = Modifier
-                .size(24.dp) // Adjust size of the icon
-                .padding(2.dp) // Optional: Add padding inside the button around the image
+                .size(24.dp)
+                .padding(2.dp)
         )
-    }
-}
-
-
-@Composable
-fun CenteredContent(paddingValues: PaddingValues, text: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-            .background(Color(79, 149, 157)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text)
     }
 }
 
@@ -420,7 +429,7 @@ fun FirstPage(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(VerdeNatura)  // sfondo principale
     ) {
         TopAppBar(
             title = {},
@@ -434,7 +443,7 @@ fun FirstPage(navController: NavHostController) {
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
+                containerColor = Color.Transparent // mantiene trasparente
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -442,10 +451,9 @@ fun FirstPage(navController: NavHostController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(79, 149, 157)),
+                .background(VerdeNatura),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
-
         ) {
             Spacer(modifier = Modifier.height(100.dp))
             Text(
@@ -477,9 +485,7 @@ fun FirstPage(navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPage(navController: NavHostController) {
-    //  Per API
     val coroutineScope = rememberCoroutineScope()
-    //Salvataggio Token
     val context = LocalContext.current.applicationContext
 
     var username by remember { mutableStateOf("") }
@@ -488,7 +494,7 @@ fun LoginPage(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(VerdeNatura)  // Palette dominante
     ) {
         TopAppBar(
             title = {},
@@ -503,11 +509,10 @@ fun LoginPage(navController: NavHostController) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Content container with centered alignment and full width
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)  // fill remaining height
+                .weight(1f)
                 .padding(horizontal = 0.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
@@ -527,7 +532,13 @@ fun LoginPage(navController: NavHostController) {
                 onValueChange = { username = it },
                 label = { Text("Username") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    focusedLabelColor = BiancoSporco.copy(alpha = 0.5f),
+                    cursorColor = BiancoSporco.copy(alpha = 0.5f),
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -538,7 +549,13 @@ fun LoginPage(navController: NavHostController) {
                 label = { Text("Password") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    focusedLabelColor = BiancoSporco.copy(alpha = 0.5f),
+                    cursorColor = BiancoSporco.copy(alpha = 0.5f),
+                )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -558,7 +575,11 @@ fun LoginPage(navController: NavHostController) {
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank() && password.isNotBlank()
+                enabled = username.isNotBlank() && password.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GialloSolare,
+                    contentColor = Color.Black
+                )
             ) {
                 Text("Login")
             }
@@ -573,21 +594,16 @@ fun LoginPage(navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterPage(navController: NavHostController) {
-    //  Per API
     val coroutineScope = rememberCoroutineScope()
-    //Salvataggio Token
     val context = LocalContext.current.applicationContext
-    val token = remember { mutableStateOf<String?>(null) }
-
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
     var risultato by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(VerdeNatura)  // colore dominante
     ) {
         TopAppBar(
             title = {},
@@ -625,7 +641,13 @@ fun RegisterPage(navController: NavHostController) {
                 label = { Text("Username") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    focusedLabelColor = BiancoSporco.copy(alpha = 0.5f),
+                    cursorColor = BiancoSporco.copy(alpha = 0.5f),
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -637,29 +659,29 @@ fun RegisterPage(navController: NavHostController) {
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = GialloSolare,
+                    unfocusedBorderColor = BiancoSporco,
+                    focusedLabelColor = GialloSolare,
+                    cursorColor = GialloSolare,
+                )
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        //Crea L'utente
                         val apiService = RetrofitInstance.api
                         val result = registerUser(apiService, username, password)
 
                         val firstWord = result?.split(" ")?.firstOrNull()
 
                         if (firstWord == "Registered") {
-                            // Success
                             val id = getId(apiService, username)
                             SecureStorage.saveUser(context, id)
                             SecureStorage.savePassword(context, password)
-
                             SecureStorage.saveToken(
                                 context,
                                 loginUser(apiService, username, password)
@@ -668,16 +690,29 @@ fun RegisterPage(navController: NavHostController) {
                         } else {
                             risultato = "Registrazione Fallita, Nome Utente Già Esistente"
                         }
-
                     }
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank() && password.isNotBlank()
+                enabled = username.isNotBlank() && password.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GialloSolare,
+                    contentColor = Color.Black
+                )
             ) {
                 Text("Register")
             }
-            Text(risultato)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (risultato.isNotEmpty()) {
+                Text(
+                    text = risultato,
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
     }
 }
@@ -687,7 +722,6 @@ fun RegisterPage(navController: NavHostController) {
 //
 @Composable
 fun HomePage(navController: NavHostController) {
-    //Variabili Per Testare
     val coroutineScope = rememberCoroutineScope()
     var groups by remember { mutableStateOf<List<Group>?>(emptyList()) }
     val context = LocalContext.current.applicationContext
@@ -703,7 +737,6 @@ fun HomePage(navController: NavHostController) {
         topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        // Main content inside the Scaffold, using Column to organize UI elements vertically
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -712,7 +745,6 @@ fun HomePage(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // List of groups with dividers
             groups?.forEachIndexed { index, group ->
                 ElementGroup(navController, group)
                 if (index != groups?.lastIndex) {
@@ -720,16 +752,17 @@ fun HomePage(navController: NavHostController) {
                         color = Color.LightGray,
                         thickness = 1.dp,
                         modifier = Modifier
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                             .fillMaxWidth()
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             NavigationButton("Crea Gruppo", "createGroup", navController)
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             NavigationButton("Unisciti Gruppo", "enterGroup", navController)
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -739,35 +772,28 @@ fun ElementGroup(navController: NavHostController, group: Group) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                navController.navigate("group/${group.name}");
-            },
+            .clickable { navController.navigate("group/${group.name}") }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = group.name,
                 style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold),
-
-                modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
             )
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
-
 //
 // 5 (Create Group)
 //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateGroupPage(navController: NavHostController) {
-    //  Per API
     val coroutineScope = rememberCoroutineScope()
-    //Salvataggio Token
     val context = LocalContext.current.applicationContext
     var username by remember { mutableStateOf("") }
     var risultato by remember { mutableStateOf("") }
@@ -775,27 +801,24 @@ fun CreateGroupPage(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(Color(79, 149, 157)) // VerdeNatura-like
     ) {
         TopAppBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = BiancoSporco)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Content container with centered alignment and full width
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)  // fill remaining height
-                .padding(horizontal = 0.dp),
+                .weight(1f)
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -804,7 +827,7 @@ fun CreateGroupPage(navController: NavHostController) {
                 text = "Happy Green",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = BiancoSporco
             )
 
             Spacer(modifier = Modifier.height(50.dp))
@@ -812,22 +835,25 @@ fun CreateGroupPage(navController: NavHostController) {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Nome Gruppo") },
+                label = { Text("Nome Gruppo", color = BiancoSporco) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    focusedLabelColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedLabelColor = BiancoSporco.copy(alpha = 0.7f),
+                )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     coroutineScope.launch {
-
                         val api = RetrofitInstance.api
                         val id = SecureStorage.getUser(context)
                         val responce = createGroup(api, id, username)
-
-
                         val firstWord = responce.split(" ")?.firstOrNull()
 
                         if (firstWord == "Created") {
@@ -839,54 +865,55 @@ fun CreateGroupPage(navController: NavHostController) {
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank()
+                enabled = username.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GialloSolare,
+                    contentColor = Color.Black
+                )
             ) {
                 Text("Crea Gruppo")
             }
-            Text(risultato)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(risultato, color = Color.Red)
         }
     }
 }
 
 //
-// 6 (Join Group)
+// 7(Join Group )
 //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JoinGroupPage(navController: NavHostController) {
-    //  Per API
     val coroutineScope = rememberCoroutineScope()
-    //Salvataggio Token
     val context = LocalContext.current.applicationContext
 
     var username by remember { mutableStateOf("") }
-
     var risultato by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(Color(79, 149, 157)) // VerdeNatura
     ) {
         TopAppBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = BiancoSporco)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Content container with centered alignment and full width
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)  // fill remaining height
-                .padding(horizontal = 0.dp),
+                .weight(1f)
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -895,7 +922,7 @@ fun JoinGroupPage(navController: NavHostController) {
                 text = "Happy Green",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = BiancoSporco
             )
 
             Spacer(modifier = Modifier.height(50.dp))
@@ -903,17 +930,22 @@ fun JoinGroupPage(navController: NavHostController) {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("ID Gruppo") },
+                label = { Text("ID Gruppo", color = BiancoSporco) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedBorderColor = BiancoSporco.copy(alpha = 0.5f),
+                    focusedLabelColor = BiancoSporco.copy(alpha = 0.5f),
+                    unfocusedLabelColor = BiancoSporco.copy(alpha = 0.7f),
+                )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     coroutineScope.launch {
-
                         val api = RetrofitInstance.api
                         val id = SecureStorage.getUser(context)
                         val responce = joinGroup(api, id, username.toInt())
@@ -929,11 +961,18 @@ fun JoinGroupPage(navController: NavHostController) {
                 },
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth(0.4f),
-                enabled = username.isNotBlank()
+                enabled = username.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GialloSolare,
+                    contentColor = Color.Black
+                )
             ) {
                 Text("Join")
             }
-            Text(risultato)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(risultato, color = Color.Red)
         }
     }
 }
@@ -970,7 +1009,7 @@ fun GroupPage(navController: NavHostController, nome: String) {
                 ElementPost(navController, post)
                 if (index != posts.lastIndex) {
                     Divider(
-                        color = Color.LightGray,
+                        color = BiancoSporco.copy(alpha = 0.5f),
                         thickness = 1.dp,
                         modifier = Modifier
                             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -984,16 +1023,13 @@ fun GroupPage(navController: NavHostController, nome: String) {
 
 @Composable
 fun ElementPost(navController: NavHostController, post: Post) {
-    val coroutineScope = rememberCoroutineScope()
     var author by remember { mutableStateOf("") }
 
-    // Direct mapping
     val text = post.text
     val imageLink = post.image?.replaceFirst("http://", "https://") ?: ""
 
     val lat = post.location_lat ?: 0.0
     val lng = post.location_lng ?: 0.0
-
 
     LaunchedEffect(post.author) {
         val api = RetrofitInstance.api
@@ -1004,17 +1040,19 @@ fun ElementPost(navController: NavHostController, post: Post) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .background(Color(0xFFEFEFEF), RoundedCornerShape(10.dp))
+            .background(VerdeNatura.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Author name
             Text(
                 text = author,
-                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                ),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Post image
             AsyncImage(
                 model = imageLink,
                 contentDescription = null,
@@ -1024,33 +1062,34 @@ fun ElementPost(navController: NavHostController, post: Post) {
                 contentScale = ContentScale.Fit
             )
 
-
-
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Description
             Text(
                 text = text,
-                style = TextStyle(fontSize = 16.sp),
+                style = TextStyle(
+                    fontSize = 24.sp,
+                    color = Color.Black
+                ),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Location (optional)
             if (lat != 0.0 || lng != 0.0) {
                 Text(
                     text = "📍 $lat, $lng",
-                    style = TextStyle(fontSize = 12.sp, color = Color.Gray)
+                    style = TextStyle(fontSize = 16.sp, color = Color.Black)
                 )
             }
 
-            // Comment button
             Button(
-                onClick = {
-                    navController.navigate("comment/${post.id}")
-                },
+                onClick = { navController.navigate("comment/${post.id}") },
                 modifier = Modifier
                     .align(Alignment.End)
-                    .padding(top = 8.dp)
+                    .padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GialloSolare,
+                    contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(5.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowForward,
@@ -1061,6 +1100,39 @@ fun ElementPost(navController: NavHostController, post: Post) {
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GroupHeaderBar(navController: NavHostController, title: String) {
+    TopAppBar(
+        title = {
+            Text(
+                text = title,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+                color = BiancoSporco
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VerdeNatura)
+            .clickable { navController.navigate("mapPage/${title}") },
+        actions = {
+            IconButton(onClick = { navController.navigate("addPost/${title}") }) {
+                Icon(
+                    imageVector = Icons.Filled.AddCircle,
+                    contentDescription = "Add",
+                    tint = BiancoSporco,
+                    modifier = Modifier.size(35.dp)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = VerdeNatura,
+            titleContentColor = BiancoSporco
+        )
+    )
 }
 
 //
@@ -1074,7 +1146,6 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
     val context = LocalContext.current.applicationContext
     val userId = SecureStorage.getUser(context)
 
-    var username by remember { mutableStateOf("") }
     var members by remember { mutableStateOf<List<User>>(emptyList()) }
     var groupID by remember { mutableStateOf(0) }
     var userLocation by remember { mutableStateOf(LatLng(41.8967, 12.4822)) }
@@ -1085,27 +1156,22 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
         posts = getPostByGroupName(api, nomeGruppo) ?: emptyList()
         members = getMembersByGroupName(api, nomeGruppo)
 
-        val location = getLastKnownLocation(context)
-        userLocation = location?.let {
-            LatLng(it.latitude, it.longitude)
-        } ?: LatLng(0.0, 0.0)
+        userLocation = LatLng(41.8967, 12.4822)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(VerdeNatura) // Your custom background color
     ) {
         TopAppBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -1136,7 +1202,6 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
                 posts.forEach { post ->
                     val lat = post.location_lat
                     val lng = post.location_lng
-
                     if (lat != null && lng != null) {
                         Marker(
                             state = MarkerState(position = LatLng(lat, lng)),
@@ -1150,42 +1215,42 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
                     title = "Tu sei qui",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
                 )
-
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "ID Gruppo : $groupID",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = Color.Black
             )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "Membri del Gruppo",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = Color.Black
             )
 
             Column {
-                for (user in members) {
+                members.forEach { user ->
                     Text(
                         text = user.username,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp),
-                        color = Color.White
+                        color = Color.Black
                     )
                     Divider(
-                            color = Color.LightGray,
-                    thickness = 1.dp,
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .fillMaxWidth()
+                        color = Color.LightGray,
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .fillMaxWidth()
                     )
                 }
             }
-
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1194,20 +1259,23 @@ fun GroupMapPage(navController: NavHostController, nomeGruppo: String) {
             onClick = {
                 coroutineScope.launch {
                     val api = RetrofitInstance.api
-                    quitGroup(api, SecureStorage.getUser(context), nomeGruppo)
+                    quitGroup(api, userId, nomeGruppo)
+                    navController.navigate("home")
                 }
-                navController.navigate("home")
             },
             shape = RoundedCornerShape(5.dp),
             modifier = Modifier
                 .fillMaxWidth(0.4f)
                 .align(Alignment.CenterHorizontally),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AzzurroChiaro2,
+                contentColor = Color.Black
+            )
         ) {
-            Text("Esci Gruppo")
+            Text("Esci Gruppo", color = Color.Black)
         }
     }
 }
-
 
 //
 // 9(Create Post)
@@ -1223,27 +1291,20 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
     var location by remember { mutableStateOf<LatLng?>(null) }
     var resultText by remember { mutableStateOf("") }
 
-    // Location permission state
-    val permissionState = rememberPermissionState(
-        android.Manifest.permission.ACCESS_FINE_LOCATION
-    )
+    val permissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
-    // Image picker launcher
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         imageUri = uri
     }
 
-    // Fused location client
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
 
-    // Get user location if permission is granted
     LaunchedEffect(permissionState.status.isGranted) {
         if (permissionState.status.isGranted) {
             val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                context, Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
             if (hasPermission) {
@@ -1258,12 +1319,10 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
         }
     }
 
-    // Camera position state, updated with selected location or default to Rome
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(location ?: LatLng(41.9028, 12.4964), 6f)
     }
 
-    // When location changes, move camera to new position
     LaunchedEffect(location) {
         location?.let {
             cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 15f))
@@ -1273,14 +1332,14 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(VerdeNatura)
             .verticalScroll(rememberScrollState())
     ) {
         TopAppBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -1292,7 +1351,7 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
             text = "Aggiungi Post a $groupName",
             fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = Color.Black,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
@@ -1301,21 +1360,23 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text("Descrizione") },
+            label = { Text("Descrizione", color = Color.Black) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             singleLine = false,
-            maxLines = 3
+            maxLines = 3,
+            textStyle = LocalTextStyle.current.copy(color = Color.Black)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         Button(
             onClick = { launcher.launch("image/*") },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
         ) {
-            Text("Seleziona Immagine")
+            Text("Seleziona Immagine", color = Color.Black)
         }
 
         imageUri?.let {
@@ -1335,27 +1396,24 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
         location?.let {
             Text(
                 text = "Posizione selezionata: ${it.latitude}, ${it.longitude}",
-                color = Color.White,
+                color = Color.Black,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
 
         Text(
             text = "Tocca la mappa per selezionare un'altra posizione:",
-            color = Color.White,
+            color = Color.Black,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        // --- Google Map Composable ---
         GoogleMap(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
                 .padding(horizontal = 16.dp),
             cameraPositionState = cameraPositionState,
-            onMapClick = { latLng ->
-                location = latLng
-            }
+            onMapClick = { latLng -> location = latLng }
         ) {
             location?.let {
                 Marker(
@@ -1364,86 +1422,39 @@ fun AddPostPage(navController: NavHostController, groupName: String) {
                 )
             }
         }
-        // --- end map ---
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-
                 coroutineScope.launch {
                     val api = RetrofitInstance.api
-
                     if (imageUri != null && location != null && description.isNotBlank()) {
                         val postData = PostData(
-                            groupId = getIDGroup(
-                                api,
-                                groupName
-                            ),       // pass actual group ID if available
-                            authorId = SecureStorage.getUser(context),      // pass actual user ID if available
+                            groupId = getIDGroup(api, groupName),
+                            authorId = SecureStorage.getUser(context),
                             text = description,
                             locationLat = location?.latitude,
                             locationLng = location?.longitude,
                             imageUri = imageUri!!
                         )
-
                         resultText = createPost(api, context, postData)
-                        navController.navigate("group/${groupName}")
-
-
+                        navController.navigate("group/$groupName")
                     } else {
                         resultText = "Seleziona immagine, posizione e inserisci descrizione."
                     }
-
-
                 }
-
             },
             shape = RoundedCornerShape(5.dp),
             modifier = Modifier
                 .fillMaxWidth(0.5f)
                 .align(Alignment.CenterHorizontally),
-            enabled = description.isNotBlank() && location != null
+            enabled = description.isNotBlank() && location != null,
+            colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
         ) {
-            Text("Crea Post")
+            Text("Crea Post", color = Color.Black)
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun GroupHeaderBar(navController: NavHostController, title: String) {
-    TopAppBar(
-        title = {
-            Text(
-                text = title,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Black,
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(99, 169, 177))
-            .clickable { navController.navigate("mapPage/${title}") },
-        actions = {
-            IconButton(onClick = {
-                navController.navigate("addPost/${title}")
-            }) {
-                Icon(
-                    //Dovrebbe Funzionare
-                    imageVector = Icons.Filled.AddCircle,
-                    contentDescription = "Add",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(35.dp)
-                )
-
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    )
 }
 
 //
@@ -1470,33 +1481,29 @@ fun CommentPage(navController: NavHostController, postId: Int) {
 
     post?.let { currentPost ->
         val text = currentPost.text
-        val imageLink = post!!.image?.replaceFirst("http://", "https://") ?: ""
+        val imageLink = currentPost.image?.replaceFirst("http://", "https://") ?: ""
         val lat = currentPost.location_lat ?: 0.0
         val lng = currentPost.location_lng ?: 0.0
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(79, 149, 157))
+                .background(VerdeNatura)
                 .verticalScroll(rememberScrollState())
         ) {
             TopAppBar(
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
 
-            // Post Info
-            Text("Autore: $author", color = Color.White, modifier = Modifier.padding(8.dp))
-            Text("Testo: $text", color = Color.White, modifier = Modifier.padding(8.dp))
+            Text("Autore: $author", color = Color.Black, modifier = Modifier.padding(8.dp))
+            Text("Testo: $text", color = Color.Black, modifier = Modifier.padding(8.dp))
+
             AsyncImage(
                 model = imageLink,
                 contentDescription = null,
@@ -1505,18 +1512,14 @@ fun CommentPage(navController: NavHostController, postId: Int) {
                     .height(200.dp),
                 contentScale = ContentScale.Fit
             )
-            Text("Posizione: ($lat, $lng)", color = Color.White, modifier = Modifier.padding(8.dp))
 
-            Divider(
-                color = Color.White,
-                thickness = 1.dp,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            Text("Posizione: ($lat, $lng)", color = Color.Black, modifier = Modifier.padding(8.dp))
 
-            // Comments Section
+            Divider(color = Color.Black, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+
             Text(
                 "Commenti:",
-                color = Color.White,
+                color = Color.Black,
                 fontSize = 20.sp,
                 modifier = Modifier.padding(start = 8.dp)
             )
@@ -1525,14 +1528,14 @@ fun CommentPage(navController: NavHostController, postId: Int) {
                 CommentElement(navController, comment.text.toString(), comment.author)
             }
 
-            // Add new comment
             OutlinedTextField(
                 value = newComment,
                 onValueChange = { newComment = it },
-                label = { Text("Scrivi un commento") },
+                label = { Text("Scrivi un commento", color = Color.Black) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(8.dp),
+                textStyle = LocalTextStyle.current.copy(color = Color.Black)
             )
 
             Button(
@@ -1551,27 +1554,28 @@ fun CommentPage(navController: NavHostController, postId: Int) {
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(bottom = 16.dp),
-                enabled = newComment.isNotBlank()
+                enabled = newComment.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
             ) {
-                Text("Invia Commento")
+                Text("Invia Commento", color = Color.Black)
             }
         }
     } ?: run {
-        // Loading state
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Caricamento post...", color = Color.White)
+            Text("Caricamento post...", color = Color.Black)
         }
     }
 }
 
-//Riga Di commento Con Autore e Testo
 @Composable
 fun CommentElement(navController: NavHostController, text: String, author: Int) {
     var authorUsername by remember { mutableStateOf("") }
+
     LaunchedEffect(author) {
         val api = RetrofitInstance.api
         authorUsername = getUsernameById(api, author).toString()
     }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1579,12 +1583,12 @@ fun CommentElement(navController: NavHostController, text: String, author: Int) 
     ) {
         Text(
             text = authorUsername,
-            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.Black),
             modifier = Modifier.padding(bottom = 2.dp)
         )
         Text(
             text = text,
-            style = TextStyle(fontSize = 16.sp),
+            style = TextStyle(fontSize = 16.sp, color = Color.Black),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Divider(color = Color.Gray, thickness = 1.dp)
@@ -1601,16 +1605,19 @@ fun GamePage(navController: NavHostController) {
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
 
-        // Wrappa il contenuto con un layout e applica il padding dello scaffold
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(VerdeNatura),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Button(onClick = { navController.navigate("quizpage") }) {
-                Text("Inizia Quiz")
+            Button(
+                onClick = { navController.navigate("quizpage") },
+                colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
+            ) {
+                Text("Inizia Quiz", color = Color.Black)
             }
         }
     }
@@ -1632,25 +1639,26 @@ fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(VerdeNatura)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
-                .widthIn(max = 600.dp), // optional: limits width on larger screens
+                .widthIn(max = 600.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = "Domanda ${currentIndex + 1}/${questions.size}",
-                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
             Text(
                 text = questionText,
-                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color.Black),
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
@@ -1670,10 +1678,9 @@ fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
-                    colors = ButtonColors(Color.Gray,Color.Black,backgroundColor,Color.Black
-                    )
+                    colors = ButtonColors(Color.Gray, Color.Black, backgroundColor, Color.Black)
                 ) {
-                    Text(answer.text)
+                    Text(answer.text, color = Color.Black)
                 }
             }
 
@@ -1696,8 +1703,9 @@ fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
             ) {
-                Text("Next Question")
+                Text("Next Question", color = Color.Black)
             }
 
             Button(
@@ -1707,38 +1715,42 @@ fun QuizPage(navController: NavHostController, questions: List<QuizQuestion>) {
                 enabled = quizComopletato,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
             ) {
-                Text("Finish")
+                Text("Finish", color = Color.Black)
             }
         }
     }
 }
 
-
-
 @Composable
 fun QuizResultPage(score: Int, navController: NavHostController) {
-    val context = LocalContext.current.applicationContext
-    val coroutineScope = rememberCoroutineScope()
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(VerdeNatura)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Hai totalizzato $score su 5!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(
+            "Hai totalizzato $score su 5!",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
         Spacer(modifier = Modifier.height(20.dp))
-        Button(onClick ={
-
-            navController.navigate("game")
-        }) {
-            Text("Torna Schemata Giochi")
+        Button(
+            onClick = {
+                navController.navigate("game")
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = AzzurroChiaro2)
+        ) {
+            Text("Torna Schemata Giochi", color = Color.Black)
         }
     }
 }
-
 
 @Composable
 fun CameraPage(navController: NavHostController) {
@@ -1755,7 +1767,6 @@ fun CameraPage(navController: NavHostController) {
     }
 }
 
-
 @Composable
 fun UserPage(navController: NavHostController) {
     val context = LocalContext.current.applicationContext
@@ -1770,17 +1781,13 @@ fun UserPage(navController: NavHostController) {
 
     utente?.let { currentUser ->
         val usrn = currentUser.username
-        val pic = utente!!.profile_pic?.replaceFirst("http://", "https://")
+        val pic = currentUser.profile_pic?.replaceFirst("http://", "https://")
             ?: "https://stock.adobe.com/search/images?k=default+user"
         val pts = currentUser.points ?: 0
         val lvl = currentUser.level ?: 0
-        val dte = currentUser.date_joined ?: null
-        var resultText by remember { mutableStateOf("") }
-        var imageUri by remember { mutableStateOf<Uri?>(null) }
-        val launcher =
-            rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-                imageUri = uri
-            }
+        val dte = currentUser.date_joined
+        val dateString = (dte as? String)?.take(10) ?: "N/A"
+
         Scaffold(
             topBar = { HeaderBar(navController, "Happy Green") },
             bottomBar = { BottomNavBar(navController) }
@@ -1789,7 +1796,9 @@ fun UserPage(navController: NavHostController) {
                 modifier = Modifier
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .background(VerdeNatura)
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
@@ -1801,9 +1810,7 @@ fun UserPage(navController: NavHostController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
-                        painter = rememberAsyncImagePainter(
-                            pic
-                        ),
+                        painter = rememberAsyncImagePainter(pic),
                         contentDescription = "Profile picture",
                         modifier = Modifier
                             .size(100.dp)
@@ -1813,27 +1820,24 @@ fun UserPage(navController: NavHostController) {
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Dati utente
                     Column {
-                        Text("Username: $usrn.", fontWeight = FontWeight.Bold)
-                        Text("Punti: $pts")
-                        Text("Livello: $lvl")
-                        Text(
-                            "Registrato il: ${
-                                (dte as String).substring(
-                                    0,
-                                    10
-                                )
-                            }"
-                        )
+                        Text("Username: $usrn.", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Punti: $pts", color = Color.White)
+                        Text("Livello: $lvl", color = Color.White)
+                        Text("Registrato il: $dateString", color = Color.White)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Add this spacer with weight 1 to push buttons to the bottom
+                Spacer(modifier = Modifier.weight(1f))
+
                 Button(
                     onClick = {
                         SecureStorage.clearToken(context)
+                        SecureStorage.clearUser(context)
+                        SecureStorage.clearPassword(context)
                         navController.navigate("first")
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -1868,7 +1872,7 @@ fun UpdatePicture(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(79, 149, 157))
+            .background(VerdeNatura)
             .verticalScroll(rememberScrollState())
     ) {
         TopAppBar(
@@ -1934,7 +1938,6 @@ fun UpdatePicture(navController: NavHostController) {
     }
 }
 
-
 @Composable
 fun OptionsPage(navController: NavHostController) {
     Scaffold(
@@ -1959,8 +1962,7 @@ fun OptionsPage(navController: NavHostController) {
     }
 }
 
-
-//Semplici Bottoni di Navigazione
+// Simple navigation buttons
 @Composable
 fun NavigationButton(text: String, destination: String, navController: NavHostController) {
     Button(
@@ -1971,6 +1973,7 @@ fun NavigationButton(text: String, destination: String, navController: NavHostCo
         Text(text = text)
     }
 }
+
 
 data class Question(
     var correct : Boolean,
