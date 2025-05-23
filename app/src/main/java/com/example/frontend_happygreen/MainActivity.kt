@@ -1664,14 +1664,12 @@ fun CameraPage(navController: NavHostController) {
         topBar = { HeaderBar(navController, "Happy Green") },
         bottomBar = { BottomNavBar(navController) }
     ) { paddingValues ->
-        Box(
+        // Applica il paddingValues al contenuto di ScannerScreen
+        ScannerScreen(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(onClick = {navController.navigate("quizpage")}) { Text("Ciaone") }
-        }
+                .padding(paddingValues) // Rispetta i margini di topBar e bottomBar
+        )
     }
 }
 
