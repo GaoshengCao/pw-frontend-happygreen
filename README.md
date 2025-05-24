@@ -16,6 +16,7 @@
 - [Tecnologie utilizzate](#-tecnologie-utilizzate)
 - [Team di sviluppo](#-team-di-sviluppo)
 - [Licenza](#-licenza)
+- [NOTA BENE](#-nota-bene)
 
 ## 📝 Descrizione del Progetto
 
@@ -105,3 +106,7 @@ Progetto realizzato da:
 Questo progetto **non ha una licenza**.
 Tutto il codice è coperto dai diritti di autore.
 Questo progetto **non** è open-source 
+
+## ⚠️ Nota Bene
+
+L'applicazione, a causa di inesperienza nella progettazione di sistemi full-stack, presenta alcuni errori e bug.
