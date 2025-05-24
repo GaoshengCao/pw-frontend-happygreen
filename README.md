@@ -110,3 +110,5 @@ Questo progetto **non** è open-source
 ## ⚠️ Nota Bene
 
 L'applicazione, a causa di inesperienza nella progettazione di sistemi full-stack, presenta alcuni errori e bug.
+-Il punteggio relativo all'utente non può cambia, Causa nell' API il punteggio è Read-Only.
+-Il livello relativo all'utente non può cambia, Causa nell' API il livello è Read-Only.
