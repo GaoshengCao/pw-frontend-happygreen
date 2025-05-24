@@ -361,7 +361,7 @@ fun NavBarButton(
     navController: NavHostController,
     selected: Boolean = false
 ) {
-    val bgColor = if (selected) GialloSolare else AzzurroChiaro2
+    val bgColor = if (selected) GialloSolare else BiancoSporco
     val contentColor = if (selected) Color.Black else BiancoSporco.copy(alpha = 0.8f)
 
     Button(
@@ -1011,7 +1011,7 @@ fun ElementPost(navController: NavHostController, post: Post) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .background(VerdeNatura.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+            .background(VerdeNatura.copy(alpha = 0.50f), RoundedCornerShape(10.dp))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
@@ -1019,7 +1019,7 @@ fun ElementPost(navController: NavHostController, post: Post) {
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.White
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -1039,7 +1039,7 @@ fun ElementPost(navController: NavHostController, post: Post) {
                 text = text,
                 style = TextStyle(
                     fontSize = 24.sp,
-                    color = Color.Black
+                    color = Color.White
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -1047,7 +1047,7 @@ fun ElementPost(navController: NavHostController, post: Post) {
             if (lat != 0.0 || lng != 0.0) {
                 Text(
                     text = "📍 $lat, $lng",
-                    style = TextStyle(fontSize = 16.sp, color = Color.Black)
+                    style = TextStyle(fontSize = 16.sp, color = Color.White)
                 )
             }
 
@@ -1580,7 +1580,7 @@ fun GamePage(navController: NavHostController) {
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(VerdeNatura),
+                .background(VerdeNatura.copy(alpha = 0.15f)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -1758,7 +1758,8 @@ fun UserPage(navController: NavHostController) {
 
         Scaffold(
             topBar = { HeaderBar("Happy Green") },
-            bottomBar = { BottomNavBar(navController) }
+            bottomBar = { BottomNavBar(navController)},
+            modifier = Modifier.fillMaxWidth().fillMaxHeight()
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -1766,7 +1767,7 @@ fun UserPage(navController: NavHostController) {
                     .verticalScroll(rememberScrollState())
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .background(VerdeNatura)
+                    .background(VerdeNatura.copy(0.15f))
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
@@ -1774,6 +1775,7 @@ fun UserPage(navController: NavHostController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+//                        .fillMaxHeight(0.5f)
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1796,10 +1798,10 @@ fun UserPage(navController: NavHostController) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(300.dp))
 
                 // Add this spacer with weight 1 to push buttons to the bottom
-                Spacer(modifier = Modifier.weight(1f))
+                //Spacer(modifier = Modifier.weight(1f))
 
                 Button(
                     onClick = {
@@ -1818,9 +1820,12 @@ fun UserPage(navController: NavHostController) {
                 Button(
                     onClick = { navController.navigate("updatePicture") },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
+                        .fillMaxWidth()
                 ) {
                     Text("Cambia immagine Profilo")
                 }
+                Spacer(modifier = Modifier.height(40.dp))
+
             }
         }
     }
@@ -1915,7 +1920,8 @@ fun OptionsPage(navController: NavHostController) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .background(BiancoSporco),
             contentAlignment = Alignment.Center
         ) {
             Image(
