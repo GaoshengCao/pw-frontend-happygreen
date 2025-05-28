@@ -54,10 +54,13 @@ Il frontend supporta le seguenti funzionalità:
 3. Inserisci il link del codice
    https://github.com/GaoshengCao/pw-frontend-happygreen.git
 
-  4.Cambiare in API.kt dell Object RetrofitInstance BASE_URL con l'url del server su è eseguito il serve con pw-backend-happygreen
-   https://github.com/GaoshengCao/pw-backend-happygreen
+4. Cambiare in API.kt dell Object RetrofitInstance BASE_URL con l'url del server su è eseguito il serve con pw-backend-happygreen
+   https://github.com/GaoshengCao/pw-frontend-happygreen.git
+
+   4.1 Se necessario (Se l'API di google maps è scatuto)
+   andare in app/src/main/AndroidManifest.xml e aggiornare l'API_KEY in application-> meta-data -> android:value 
    
-5. Esegui il programma
+6. Esegui il programma
    Collega tramite cavo il telefono o scarica un emulatore Android.
 
 ### Telefono
