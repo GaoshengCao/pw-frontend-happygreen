@@ -58,7 +58,7 @@ Il frontend supporta le seguenti funzionalità:
    https://github.com/GaoshengCao/pw-frontend-happygreen.git
 
    4.1 Se necessario (Se l'API di google maps è scatuto)
-   andare in app/src/main/AndroidManifest.xml e aggiornare con un nuovo l'API_KEY in application-> meta-data -> android:value 
+   andare in app/src/main/AndroidManifest.xml e aggiornare con un nuovo API_KEY in application-> meta-data -> android:value 
    
 6. Esegui il programma
    Collega tramite cavo il telefono o scarica un emulatore Android.
