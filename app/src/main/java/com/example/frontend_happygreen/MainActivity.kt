@@ -1805,9 +1805,9 @@ fun UserPage(navController: NavHostController) {
 
                 Button(
                     onClick = {
-//                        SecureStorage.clearToken(context)
+                        SecureStorage.clearToken(context)
 //                        SecureStorage.clearUser(context)
-//                        SecureStorage.clearPassword(context)
+                        SecureStorage.clearPassword(context)
                         navController.navigate("splash_screen")
                     },
                     modifier = Modifier.fillMaxWidth()
