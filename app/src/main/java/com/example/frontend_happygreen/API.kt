@@ -239,8 +239,8 @@ data class WasteClassification(
 )
 
 object RetrofitInstance {
-    // Sostituiscilo con il tuo API KEY
-    private const val BASE_URL = "https://2ee8-151-49-200-179.ngrok-free.app/"
+    // Sostituiscilo con il tuo API KEYdj
+    private const val BASE_URL = "http://costaalberto.duckdns.org:8012/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()

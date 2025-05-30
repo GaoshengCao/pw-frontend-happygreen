@@ -437,6 +437,7 @@ fun FirstPage(navController: NavHostController) {
             )
             Spacer(modifier = Modifier.height(200.dp))
 
+
             NavigationButton(
                 text = "Login",
                 destination = "login",
@@ -997,7 +998,7 @@ fun ElementPost(navController: NavHostController, post: Post) {
     var author by remember { mutableStateOf("") }
 
     val text = post.text
-    val imageLink = post.image?.replaceFirst("http://", "https://") ?: ""
+    val imageLink = post.image
 
     val lat = post.location_lat ?: 0.0
     val lng = post.location_lng ?: 0.0
@@ -1452,7 +1453,7 @@ fun CommentPage(navController: NavHostController, postId: Int) {
 
     post?.let { currentPost ->
         val text = currentPost.text
-        val imageLink = currentPost.image?.replaceFirst("http://", "https://") ?: ""
+        val imageLink = currentPost.image
         val lat = currentPost.location_lat ?: 0.0
         val lng = currentPost.location_lng ?: 0.0
 
@@ -1749,8 +1750,7 @@ fun UserPage(navController: NavHostController) {
 
     utente?.let { currentUser ->
         val usrn = currentUser.username
-        val pic = currentUser.profile_pic?.replaceFirst("http://", "https://")
-            ?: "https://stock.adobe.com/search/images?k=default+user"
+        val pic = currentUser.profile_pic?: "https://stock.adobe.com/search/images?k=default+user"
         val pts = currentUser.points ?: 0
         val lvl = currentUser.level ?: 0
         val dte = currentUser.date_joined
@@ -1805,10 +1805,10 @@ fun UserPage(navController: NavHostController) {
 
                 Button(
                     onClick = {
-                        SecureStorage.clearToken(context)
-                        SecureStorage.clearUser(context)
-                        SecureStorage.clearPassword(context)
-                        navController.navigate("first")
+//                        SecureStorage.clearToken(context)
+//                        SecureStorage.clearUser(context)
+//                        SecureStorage.clearPassword(context)
+                        navController.navigate("splash_screen")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
